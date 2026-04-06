@@ -123,7 +123,15 @@ export const useStore = create<AppState>()(
       onboardingComplete: false,
       completeOnboarding: () => set({ onboardingComplete: true }),
     }),
-    { name: 'myday-store' }
+    {
+      name: 'myday-store',
+      partialize: (state) => {
+        // Don't persist gymCourses — they're reference data from code, not user data.
+        // This ensures code updates to gym courses always take effect.
+        const { gymCourses, ...rest } = state;
+        return rest;
+      },
+    }
   )
 );
 
