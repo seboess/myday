@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/components/auth-provider";
 
 const tabs = [
   {
@@ -75,30 +76,44 @@ function formatDateGerman(): string {
 
 export default function Nav() {
   const pathname = usePathname();
+  const { user } = useAuth();
+
+  // Don't show nav on the login page
+  if (pathname === "/login") {
+    return null;
+  }
+
+  const initial = user?.email?.charAt(0).toUpperCase() ?? "?";
 
   return (
     <>
-      {/* Header — Material You: white, subtle shadow, no border */}
+      {/* Header */}
       <header className="sticky top-0 z-40 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
         <div className="flex items-center justify-between px-5 py-3.5">
           <div>
             <h1 className="text-xl font-semibold text-stone-900">MyDay</h1>
             <p className="text-xs text-stone-400">{formatDateGerman()}</p>
           </div>
-          <Link
-            href="/einstellungen"
-            className="rounded-full p-2.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
-            aria-label="Einstellungen"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1.08z" />
-            </svg>
-          </Link>
+          <div className="flex items-center gap-2">
+            {/* User avatar initial */}
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-stone-900 text-xs font-medium text-white">
+              {initial}
+            </div>
+            <Link
+              href="/einstellungen"
+              className="rounded-full p-2.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
+              aria-label="Einstellungen"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1.08z" />
+              </svg>
+            </Link>
+          </div>
         </div>
       </header>
 
-      {/* Bottom Navigation — Material You: pill-shaped active indicator */}
+      {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white shadow-[0_-1px_3px_rgba(0,0,0,0.05)]">
         <div className="flex items-center justify-around px-1 pb-[env(safe-area-inset-bottom)]">
           {tabs.map((tab) => {

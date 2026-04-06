@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Nav from "@/components/nav";
 import { ServiceWorkerRegister } from "@/components/sw-register";
+import { AuthProvider } from "@/components/auth-provider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -11,7 +12,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "MyDay",
-  description: "Dein persönlicher Tagesplaner",
+  description: "Dein persoenlicher Tagesplaner",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -36,9 +37,11 @@ export default function RootLayout({
   return (
     <html lang="de" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-white font-[var(--font-inter)]">
-        <Nav />
-        <ServiceWorkerRegister />
-        <main className="flex-1 pb-20">{children}</main>
+        <AuthProvider>
+          <Nav />
+          <ServiceWorkerRegister />
+          <main className="flex-1 pb-20">{children}</main>
+        </AuthProvider>
       </body>
     </html>
   );

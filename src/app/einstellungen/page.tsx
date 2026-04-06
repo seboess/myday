@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { SUBJECT_COLORS } from "@/lib/types";
 import type { Subject } from "@/lib/types";
@@ -16,19 +16,18 @@ import {
   Trash2,
   Plus,
   Pencil,
-  Download,
-  Upload,
   AlertTriangle,
   BookOpen,
+  LogOut,
 } from "lucide-react";
+import { useAuth } from "@/components/auth-provider";
 
 export default function EinstellungenPage() {
   const subjects = useStore((s) => s.subjects);
   const addSubject = useStore((s) => s.addSubject);
   const updateSubject = useStore((s) => s.updateSubject);
   const removeSubject = useStore((s) => s.removeSubject);
-  const lastBackupDate = useStore((s) => s.lastBackupDate);
-  const setLastBackupDate = useStore((s) => s.setLastBackupDate);
+  const { user, signOut } = useAuth();
 
   // Subject dialog
   const [subjectDialogOpen, setSubjectDialogOpen] = useState(false);
@@ -39,15 +38,6 @@ export default function EinstellungenPage() {
 
   // Delete subject confirm
   const [deleteSubjectId, setDeleteSubjectId] = useState<string | null>(null);
-
-  // Import
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [importConfirmData, setImportConfirmData] = useState<string | null>(
-    null
-  );
-
-  // Reset confirm
-  const [resetStep, setResetStep] = useState(0);
 
   // --- Subject CRUD ---
 
@@ -84,57 +74,6 @@ export default function EinstellungenPage() {
   function handleDeleteSubject(id: string) {
     removeSubject(id);
     setDeleteSubjectId(null);
-  }
-
-  // --- Backup ---
-
-  function handleExport() {
-    const state = localStorage.getItem("myday-store");
-    if (!state) return;
-    const blob = new Blob([state], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `myday-backup-${new Date().toISOString().split("T")[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    const now = new Date().toISOString();
-    setLastBackupDate(now);
-  }
-
-  function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const text = ev.target?.result as string;
-      try {
-        JSON.parse(text); // validate
-        setImportConfirmData(text);
-      } catch {
-        alert("Ungueltige JSON-Datei.");
-      }
-    };
-    reader.readAsText(file);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }
-
-  function confirmImport() {
-    if (!importConfirmData) return;
-    localStorage.setItem("myday-store", importConfirmData);
-    setImportConfirmData(null);
-    window.location.reload();
-  }
-
-  // --- Reset ---
-
-  async function handleReset() {
-    localStorage.removeItem("myday-store");
-    const dbs = await window.indexedDB.databases();
-    for (const db of dbs) {
-      if (db.name) window.indexedDB.deleteDatabase(db.name);
-    }
-    window.location.reload();
   }
 
   return (
@@ -199,63 +138,26 @@ export default function EinstellungenPage() {
 
       <div className="border-t border-stone-100" />
 
-      {/* --- Section: Backup --- */}
+      {/* --- Section: Account --- */}
       <section className="space-y-4">
-        <h2 className="text-xs font-medium text-stone-500 uppercase tracking-wider">Daten-Backup</h2>
+        <h2 className="text-xs font-medium text-stone-500 uppercase tracking-wider">Konto</h2>
 
-        <div className="flex flex-wrap gap-3">
-          <button
-            className="bg-stone-100 text-stone-700 rounded-xl px-4 py-2 font-medium hover:bg-stone-200 transition-colors flex items-center gap-2"
-            onClick={handleExport}
-          >
-            <Download className="h-4 w-4" />
-            Daten exportieren
-          </button>
-          <button
-            className="bg-stone-100 text-stone-700 rounded-xl px-4 py-2 font-medium hover:bg-stone-200 transition-colors flex items-center gap-2"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Upload className="h-4 w-4" />
-            Daten importieren
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".json"
-            className="hidden"
-            onChange={handleImportFile}
-          />
+        <div className="bg-stone-50 rounded-xl p-3 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-stone-900 text-sm font-medium text-white">
+            {user?.email?.charAt(0).toUpperCase() ?? "?"}
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-stone-800">{user?.email ?? "Nicht angemeldet"}</p>
+            <p className="text-xs text-stone-400">Deine Daten werden automatisch in der Cloud gespeichert.</p>
+          </div>
         </div>
 
-        <p className="text-sm text-stone-400">
-          Letztes Backup:{" "}
-          {lastBackupDate
-            ? new Date(lastBackupDate).toLocaleDateString("de-DE", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            : "Noch nie"}
-        </p>
-      </section>
-
-      <div className="border-t border-stone-100" />
-
-      {/* --- Section: Reset --- */}
-      <section className="space-y-4">
-        <h2 className="text-xs font-medium text-stone-500 uppercase tracking-wider">Daten zuruecksetzen</h2>
-        <p className="text-sm text-stone-500">
-          Loescht alle gespeicherten Daten unwiderruflich. Erstelle vorher ein
-          Backup!
-        </p>
         <button
           className="bg-red-50 text-red-700 rounded-xl px-5 py-2.5 font-medium hover:bg-red-100 transition-colors flex items-center gap-2"
-          onClick={() => setResetStep(1)}
+          onClick={signOut}
         >
-          <Trash2 className="h-4 w-4" />
-          Alle Daten loeschen
+          <LogOut className="h-4 w-4" />
+          Abmelden
         </button>
       </section>
 
@@ -370,98 +272,6 @@ export default function EinstellungenPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Import Confirm */}
-      <Dialog
-        open={!!importConfirmData}
-        onOpenChange={() => setImportConfirmData(null)}
-      >
-        <DialogContent className="rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-stone-900">
-              <AlertTriangle className="h-5 w-5 text-amber-500" />
-              Daten importieren?
-            </DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-stone-500">
-            Alle aktuellen Daten werden mit dem Backup ueberschrieben. Die App
-            wird danach neu geladen.
-          </p>
-          <div className="flex justify-end gap-2 pt-4">
-            <button
-              className="bg-stone-100 text-stone-700 rounded-xl px-4 py-2 font-medium hover:bg-stone-200 transition-colors"
-              onClick={() => setImportConfirmData(null)}
-            >
-              Abbrechen
-            </button>
-            <button
-              className="bg-stone-900 text-white rounded-xl px-4 py-2 font-medium hover:bg-stone-800 transition-colors"
-              onClick={confirmImport}
-            >
-              Importieren
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Reset - Step 1 */}
-      <Dialog open={resetStep === 1} onOpenChange={() => setResetStep(0)}>
-        <DialogContent className="rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-stone-900">
-              <AlertTriangle className="h-5 w-5 text-red-500" />
-              Alle Daten loeschen?
-            </DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-stone-500">
-            Alle Faecher, Noten, Deadlines und Einstellungen werden
-            unwiderruflich geloescht.
-          </p>
-          <div className="flex justify-end gap-2 pt-4">
-            <button
-              className="bg-stone-100 text-stone-700 rounded-xl px-4 py-2 font-medium hover:bg-stone-200 transition-colors"
-              onClick={() => setResetStep(0)}
-            >
-              Abbrechen
-            </button>
-            <button
-              className="bg-red-50 text-red-700 rounded-xl px-4 py-2 font-medium hover:bg-red-100 transition-colors"
-              onClick={() => setResetStep(2)}
-            >
-              Ja, wirklich loeschen
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Reset - Step 2 (double confirm) */}
-      <Dialog open={resetStep === 2} onOpenChange={() => setResetStep(0)}>
-        <DialogContent className="rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-700">
-              <AlertTriangle className="h-5 w-5" />
-              Letzte Warnung!
-            </DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-stone-500">
-            Dieser Schritt kann nicht rueckgaengig gemacht werden. Bist du dir
-            wirklich sicher?
-          </p>
-          <div className="flex justify-end gap-2 pt-4">
-            <button
-              className="bg-stone-100 text-stone-700 rounded-xl px-4 py-2 font-medium hover:bg-stone-200 transition-colors"
-              onClick={() => setResetStep(0)}
-            >
-              Abbrechen
-            </button>
-            <button
-              className="bg-red-50 text-red-700 rounded-xl px-4 py-2 font-medium hover:bg-red-100 transition-colors"
-              onClick={handleReset}
-            >
-              Endgueltig loeschen
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

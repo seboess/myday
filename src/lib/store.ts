@@ -1,9 +1,15 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { v4 as uuid } from 'uuid';
-import type { Subject, TimetableSlot, Grade, Deadline, GymCourse, Material, MyGymDay, Day, Semester, GradeType, DeadlineType, DayOfWeek } from './types';
+import type { Subject, TimetableSlot, Grade, Deadline, GymCourse, Material, MyGymDay, Day, Semester, GradeType, DeadlineType } from './types';
+import { supabase } from './supabase';
+import { loadUserData } from './supabase-sync';
 
 interface AppState {
+  // Auth / sync
+  userId: string | null;
+  syncing: boolean;
+  loadFromSupabase: (userId: string) => Promise<void>;
+
   // Subjects
   subjects: Subject[];
   addSubject: (name: string, color: string, type: 'GK' | 'LK') => void;
@@ -32,108 +38,230 @@ interface AppState {
   myGymDays: MyGymDay[];
   toggleGymCourse: (date: string, courseId: string) => void;
 
-  // Materials (metadata only, blobs in IndexedDB)
+  // Materials (metadata only, blobs in Supabase Storage)
   materials: Material[];
   addMaterial: (material: Omit<Material, 'id' | 'createdAt'>) => string;
   removeMaterial: (id: string) => void;
-
-  // Backup
-  lastBackupDate: string | null;
-  setLastBackupDate: (date: string) => void;
-
-  // Onboarding
-  onboardingComplete: boolean;
-  completeOnboarding: () => void;
 }
 
-export const useStore = create<AppState>()(
-  persist(
-    (set, get) => ({
-      // Subjects
-      subjects: [],
-      addSubject: (name, color, type) =>
-        set((s) => ({ subjects: [...s.subjects, { id: uuid(), name, color, type }] })),
-      updateSubject: (id, updates) =>
-        set((s) => ({ subjects: s.subjects.map((sub) => (sub.id === id ? { ...sub, ...updates } : sub)) })),
-      removeSubject: (id) =>
-        set((s) => ({ subjects: s.subjects.filter((sub) => sub.id !== id) })),
+export const useStore = create<AppState>()((set, get) => ({
+  // Auth / sync
+  userId: null,
+  syncing: false,
 
-      // Timetable
-      timetable: [],
-      setTimetableSlot: (day, period, subjectId) =>
-        set((s) => {
-          const filtered = s.timetable.filter((t) => !(t.day === day && t.period === period));
-          return { timetable: [...filtered, { day, period, subjectId }] };
-        }),
-      clearTimetableSlot: (day, period) =>
-        set((s) => ({ timetable: s.timetable.filter((t) => !(t.day === day && t.period === period)) })),
-
-      // Grades
-      grades: [],
-      addGrade: (subjectId, semester, type, points, weight, label) =>
-        set((s) => ({ grades: [...s.grades, { id: uuid(), subjectId, semester, type, points, weight, label }] })),
-      updateGrade: (id, updates) =>
-        set((s) => ({ grades: s.grades.map((g) => (g.id === id ? { ...g, ...updates } : g)) })),
-      removeGrade: (id) =>
-        set((s) => ({ grades: s.grades.filter((g) => g.id !== id) })),
-
-      // Deadlines
-      deadlines: [],
-      addDeadline: (subjectId, title, type, dueDate, notes) =>
-        set((s) => ({ deadlines: [...s.deadlines, { id: uuid(), subjectId, title, type, dueDate, notes }] })),
-      updateDeadline: (id, updates) =>
-        set((s) => ({ deadlines: s.deadlines.map((d) => (d.id === id ? { ...d, ...updates } : d)) })),
-      removeDeadline: (id) =>
-        set((s) => ({ deadlines: s.deadlines.filter((d) => d.id !== id) })),
-
-      // Gym
-      gymCourses: defaultGymCourses(),
-      myGymDays: [],
-      toggleGymCourse: (date, courseId) =>
-        set((s) => {
-          const existing = s.myGymDays.find((d) => d.date === date);
-          if (existing) {
-            const has = existing.courseIds.includes(courseId);
-            return {
-              myGymDays: s.myGymDays.map((d) =>
-                d.date === date
-                  ? { ...d, courseIds: has ? d.courseIds.filter((c) => c !== courseId) : [...d.courseIds, courseId] }
-                  : d
-              ),
-            };
-          }
-          return { myGymDays: [...s.myGymDays, { date, courseIds: [courseId] }] };
-        }),
-
-      // Materials
-      materials: [],
-      addMaterial: (material) => {
-        const id = uuid();
-        set((s) => ({ materials: [...s.materials, { ...material, id, createdAt: new Date().toISOString() }] }));
-        return id;
-      },
-      removeMaterial: (id) =>
-        set((s) => ({ materials: s.materials.filter((m) => m.id !== id) })),
-
-      // Backup
-      lastBackupDate: null,
-      setLastBackupDate: (date) => set({ lastBackupDate: date }),
-
-      // Onboarding
-      onboardingComplete: false,
-      completeOnboarding: () => set({ onboardingComplete: true }),
-    }),
-    {
-      name: 'myday-store',
-      partialize: (state) => {
-        // Don't persist gymCourses — they're reference data from code, not user data.
-        // This ensures code updates to gym courses always take effect.
-        const { gymCourses, ...rest } = state;
-        return rest;
-      },
+  loadFromSupabase: async (userId: string) => {
+    set({ syncing: true, userId });
+    try {
+      const data = await loadUserData(userId);
+      set({
+        subjects: data.subjects,
+        timetable: data.timetable,
+        grades: data.grades,
+        deadlines: data.deadlines,
+        materials: data.materials,
+        myGymDays: data.myGymDays,
+        syncing: false,
+      });
+    } catch {
+      set({ syncing: false });
     }
-  )
-);
+  },
+
+  // Subjects
+  subjects: [],
+  addSubject: (name, color, type) => {
+    const id = uuid();
+    set((s) => ({ subjects: [...s.subjects, { id, name, color, type }] }));
+    const { userId } = get();
+    if (userId) {
+      supabase.from('subjects').insert({ id, user_id: userId, name, color, type }).then();
+    }
+  },
+  updateSubject: (id, updates) => {
+    set((s) => ({ subjects: s.subjects.map((sub) => (sub.id === id ? { ...sub, ...updates } : sub)) }));
+    const { userId } = get();
+    if (userId) {
+      const dbUpdates: Record<string, unknown> = {};
+      if (updates.name !== undefined) dbUpdates.name = updates.name;
+      if (updates.color !== undefined) dbUpdates.color = updates.color;
+      if (updates.type !== undefined) dbUpdates.type = updates.type;
+      supabase.from('subjects').update(dbUpdates).eq('id', id).eq('user_id', userId).then();
+    }
+  },
+  removeSubject: (id) => {
+    set((s) => ({ subjects: s.subjects.filter((sub) => sub.id !== id) }));
+    const { userId } = get();
+    if (userId) {
+      supabase.from('subjects').delete().eq('id', id).eq('user_id', userId).then();
+    }
+  },
+
+  // Timetable
+  timetable: [],
+  setTimetableSlot: (day, period, subjectId) => {
+    set((s) => {
+      const filtered = s.timetable.filter((t) => !(t.day === day && t.period === period));
+      return { timetable: [...filtered, { day, period, subjectId }] };
+    });
+    const { userId } = get();
+    if (userId) {
+      // Upsert: delete then insert (Supabase upsert needs all unique cols)
+      supabase
+        .from('timetable_slots')
+        .delete()
+        .eq('user_id', userId)
+        .eq('day', day)
+        .eq('period', period)
+        .then(() => {
+          supabase
+            .from('timetable_slots')
+            .insert({ user_id: userId, day, period, subject_id: subjectId })
+            .then();
+        });
+    }
+  },
+  clearTimetableSlot: (day, period) => {
+    set((s) => ({ timetable: s.timetable.filter((t) => !(t.day === day && t.period === period)) }));
+    const { userId } = get();
+    if (userId) {
+      supabase.from('timetable_slots').delete().eq('user_id', userId).eq('day', day).eq('period', period).then();
+    }
+  },
+
+  // Grades
+  grades: [],
+  addGrade: (subjectId, semester, type, points, weight, label) => {
+    const id = uuid();
+    set((s) => ({ grades: [...s.grades, { id, subjectId, semester, type, points, weight, label }] }));
+    const { userId } = get();
+    if (userId) {
+      supabase
+        .from('grades')
+        .insert({ id, user_id: userId, subject_id: subjectId, semester, type, points, weight, label: label ?? null })
+        .then();
+    }
+  },
+  updateGrade: (id, updates) => {
+    set((s) => ({ grades: s.grades.map((g) => (g.id === id ? { ...g, ...updates } : g)) }));
+    const { userId } = get();
+    if (userId) {
+      const dbUpdates: Record<string, unknown> = {};
+      if (updates.subjectId !== undefined) dbUpdates.subject_id = updates.subjectId;
+      if (updates.semester !== undefined) dbUpdates.semester = updates.semester;
+      if (updates.type !== undefined) dbUpdates.type = updates.type;
+      if (updates.points !== undefined) dbUpdates.points = updates.points;
+      if (updates.weight !== undefined) dbUpdates.weight = updates.weight;
+      if (updates.label !== undefined) dbUpdates.label = updates.label;
+      supabase.from('grades').update(dbUpdates).eq('id', id).eq('user_id', userId).then();
+    }
+  },
+  removeGrade: (id) => {
+    set((s) => ({ grades: s.grades.filter((g) => g.id !== id) }));
+    const { userId } = get();
+    if (userId) {
+      supabase.from('grades').delete().eq('id', id).eq('user_id', userId).then();
+    }
+  },
+
+  // Deadlines
+  deadlines: [],
+  addDeadline: (subjectId, title, type, dueDate, notes) => {
+    const id = uuid();
+    set((s) => ({ deadlines: [...s.deadlines, { id, subjectId, title, type, dueDate, notes }] }));
+    const { userId } = get();
+    if (userId) {
+      supabase
+        .from('deadlines')
+        .insert({ id, user_id: userId, subject_id: subjectId, title, type, due_date: dueDate, notes: notes ?? null })
+        .then();
+    }
+  },
+  updateDeadline: (id, updates) => {
+    set((s) => ({ deadlines: s.deadlines.map((d) => (d.id === id ? { ...d, ...updates } : d)) }));
+    const { userId } = get();
+    if (userId) {
+      const dbUpdates: Record<string, unknown> = {};
+      if (updates.subjectId !== undefined) dbUpdates.subject_id = updates.subjectId;
+      if (updates.title !== undefined) dbUpdates.title = updates.title;
+      if (updates.type !== undefined) dbUpdates.type = updates.type;
+      if (updates.dueDate !== undefined) dbUpdates.due_date = updates.dueDate;
+      if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+      supabase.from('deadlines').update(dbUpdates).eq('id', id).eq('user_id', userId).then();
+    }
+  },
+  removeDeadline: (id) => {
+    set((s) => ({ deadlines: s.deadlines.filter((d) => d.id !== id) }));
+    const { userId } = get();
+    if (userId) {
+      supabase.from('deadlines').delete().eq('id', id).eq('user_id', userId).then();
+    }
+  },
+
+  // Gym
+  gymCourses: defaultGymCourses(),
+  myGymDays: [],
+  toggleGymCourse: (date, courseId) => {
+    const state = get();
+    const existing = state.myGymDays.find((d) => d.date === date);
+    const isRemoving = existing?.courseIds.includes(courseId) ?? false;
+
+    set((s) => {
+      const existingDay = s.myGymDays.find((d) => d.date === date);
+      if (existingDay) {
+        const has = existingDay.courseIds.includes(courseId);
+        return {
+          myGymDays: s.myGymDays.map((d) =>
+            d.date === date
+              ? { ...d, courseIds: has ? d.courseIds.filter((c) => c !== courseId) : [...d.courseIds, courseId] }
+              : d
+          ),
+        };
+      }
+      return { myGymDays: [...s.myGymDays, { date, courseIds: [courseId] }] };
+    });
+
+    const { userId } = get();
+    if (userId) {
+      if (isRemoving) {
+        supabase.from('my_gym_days').delete().eq('user_id', userId).eq('date', date).eq('course_id', courseId).then();
+      } else {
+        supabase.from('my_gym_days').insert({ user_id: userId, date, course_id: courseId }).then();
+      }
+    }
+  },
+
+  // Materials
+  materials: [],
+  addMaterial: (material) => {
+    const id = uuid();
+    const createdAt = new Date().toISOString();
+    set((s) => ({ materials: [...s.materials, { ...material, id, createdAt }] }));
+    const { userId } = get();
+    if (userId) {
+      supabase
+        .from('materials')
+        .insert({
+          id,
+          user_id: userId,
+          name: material.name,
+          mime_type: material.mimeType,
+          size: material.size,
+          linked_type: material.linkedTo.type,
+          linked_id: material.linkedTo.id,
+          storage_path: `${userId}/${id}/${material.name}`,
+        })
+        .then();
+    }
+    return id;
+  },
+  removeMaterial: (id) => {
+    set((s) => ({ materials: s.materials.filter((m) => m.id !== id) }));
+    const { userId } = get();
+    if (userId) {
+      supabase.from('materials').delete().eq('id', id).eq('user_id', userId).then();
+    }
+  },
+}));
 
 function defaultGymCourses(): GymCourse[] {
   // Real course data from John Reed Womens Club Prenzlauer Berg (April 2026)

@@ -31,14 +31,6 @@ function daysUntil(dateStr: string): number {
   return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function daysSince(dateStr: string): number {
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  const target = new Date(dateStr);
-  target.setHours(0, 0, 0, 0);
-  return Math.floor((now.getTime() - target.getTime()) / (1000 * 60 * 60 * 24));
-}
-
 function todayISO(): string {
   return new Date().toISOString().split('T')[0];
 }
@@ -51,8 +43,7 @@ export default function Home() {
   const gymCourses = useStore((s) => s.gymCourses);
   const myGymDays = useStore((s) => s.myGymDays);
   const toggleGymCourse = useStore((s) => s.toggleGymCourse);
-  const lastBackupDate = useStore((s) => s.lastBackupDate);
-  const onboardingComplete = useStore((s) => s.onboardingComplete);
+  const syncing = useStore((s) => s.syncing);
 
   const todayDayOfWeek: DayOfWeek = getTodayDay();
   const todaySchoolDay: Day | null = getTodaySchoolDay();
@@ -102,11 +93,6 @@ export default function Home() {
     return Math.max(1.0, Math.min(6.0, Math.round(grade * 10) / 10));
   }, [grades]);
 
-  const showBackupNudge = !lastBackupDate || daysSince(lastBackupDate) > 7;
-  const backupText = !lastBackupDate
-    ? 'nie'
-    : `vor ${daysSince(lastBackupDate)} Tagen`;
-
   const subjectMap = useMemo(() => {
     const map: Record<string, (typeof subjects)[0]> = {};
     for (const s of subjects) {
@@ -115,8 +101,17 @@ export default function Home() {
     return map;
   }, [subjects]);
 
-  // --- Onboarding screen ---
-  if (!onboardingComplete && subjects.length === 0) {
+  // --- Loading screen while syncing from Supabase ---
+  if (syncing) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center px-6 py-20">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-stone-300 border-t-stone-900" />
+      </div>
+    );
+  }
+
+  // --- Onboarding screen (no subjects yet) ---
+  if (subjects.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-20">
         <div className="flex flex-col items-center gap-6 text-center">
@@ -182,19 +177,6 @@ export default function Home() {
             );
           })}
         </div>
-      )}
-
-      {/* Backup-Nudge */}
-      {showBackupNudge && (
-        <Link href="/einstellungen" className="block">
-          <div className="flex items-center gap-2.5 rounded-2xl bg-blue-50 px-4 py-3 text-sm text-blue-700">
-            <span>&#x1F4BE;</span>
-            <span>
-              Letztes Backup: {backupText} &mdash;{' '}
-              <span className="font-medium underline">Backup erstellen</span>
-            </span>
-          </div>
-        </Link>
       )}
 
       {/* Heutiger Stundenplan */}
