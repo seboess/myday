@@ -1,0 +1,17 @@
+{
+  "name": "MyDay",
+  "short_name": "MyDay",
+  "description": "Dein persönlicher Tagesplaner — Stundenplan, Gym, Noten, Deadlines",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#171717",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
