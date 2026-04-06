@@ -10,10 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -34,14 +31,10 @@ const DEADLINE_TYPES: DeadlineType[] = [
 ];
 
 const TYPE_COLORS: Record<DeadlineType, string> = {
-  klausur:
-    "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
-  hausaufgabe:
-    "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
-  referat:
-    "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300",
-  abgabe:
-    "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+  klausur: "bg-red-50 text-red-700",
+  hausaufgabe: "bg-blue-50 text-blue-700",
+  referat: "bg-purple-50 text-purple-700",
+  abgabe: "bg-amber-50 text-amber-700",
 };
 
 function daysUntil(dateStr: string): number {
@@ -61,12 +54,12 @@ function formatDate(dateStr: string): string {
   });
 }
 
-function urgencyBorder(dateStr: string): string {
+function urgencyAccent(dateStr: string): string {
   const days = daysUntil(dateStr);
-  if (days < 0) return "border-l-4 border-l-neutral-400 opacity-60";
-  if (days < 3) return "border-l-4 border-l-red-500";
-  if (days < 7) return "border-l-4 border-l-orange-400";
-  return "border-l-4 border-l-transparent";
+  if (days < 0) return "opacity-60";
+  if (days < 3) return "border-l-4 border-l-red-400 rounded-l-2xl";
+  if (days < 7) return "border-l-4 border-l-amber-400 rounded-l-2xl";
+  return "";
 }
 
 export default function DeadlinesPage() {
@@ -145,27 +138,32 @@ export default function DeadlinesPage() {
 
   if (subjects.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
-        <CalendarClock className="h-12 w-12 text-muted-foreground" />
-        <p className="text-muted-foreground">
+      <div className="flex flex-col items-center justify-center gap-4 py-20 text-center px-4">
+        <CalendarClock className="h-12 w-12 text-stone-300" />
+        <p className="text-stone-500">
           Erstelle zuerst Faecher, um Deadlines anlegen zu koennen.
         </p>
         <a href="/einstellungen">
-          <Button variant="outline">Zu den Einstellungen</Button>
+          <button className="bg-stone-100 text-stone-700 rounded-xl px-5 py-2.5 font-medium hover:bg-stone-200 transition-colors">
+            Zu den Einstellungen
+          </button>
         </a>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="px-4 pb-24 pt-4 space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Deadlines</h1>
-        <Button onClick={openNewDialog} size="sm">
-          <Plus className="mr-2 h-4 w-4" />
+        <h1 className="text-2xl font-semibold text-stone-900">Deadlines</h1>
+        <button
+          onClick={openNewDialog}
+          className="bg-stone-900 text-white rounded-xl px-4 py-2 text-sm font-medium hover:bg-stone-800 transition-colors flex items-center gap-1.5"
+        >
+          <Plus className="h-4 w-4" />
           Neue Deadline
-        </Button>
+        </button>
       </div>
 
       {/* Filters */}
@@ -174,7 +172,7 @@ export default function DeadlinesPage() {
           value={filterType}
           onValueChange={(v) => v && setFilterType(v as DeadlineType | "all")}
         >
-          <SelectTrigger className="w-[160px]">
+          <SelectTrigger className="w-[160px] rounded-xl border-stone-200">
             <SelectValue placeholder="Typ" />
           </SelectTrigger>
           <SelectContent>
@@ -188,7 +186,7 @@ export default function DeadlinesPage() {
         </Select>
 
         <Select value={filterSubject} onValueChange={(v) => v && setFilterSubject(v)}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[180px] rounded-xl border-stone-200">
             <SelectValue placeholder="Fach" />
           </SelectTrigger>
           <SelectContent>
@@ -205,8 +203,8 @@ export default function DeadlinesPage() {
       {/* Deadline list */}
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
-          <CalendarClock className="h-10 w-10 text-muted-foreground" />
-          <p className="text-muted-foreground">
+          <CalendarClock className="h-10 w-10 text-stone-300" />
+          <p className="text-stone-400">
             Keine Deadlines. Erstelle eine neue!
           </p>
         </div>
@@ -216,11 +214,11 @@ export default function DeadlinesPage() {
             const subject = subjects.find((s) => s.id === d.subjectId);
             const days = daysUntil(d.dueDate);
             return (
-              <Card key={d.id} className={urgencyBorder(d.dueDate)}>
-                <CardContent className="flex items-start gap-4 p-4">
+              <div key={d.id} className={`bg-stone-50 rounded-2xl p-4 ${urgencyAccent(d.dueDate)}`}>
+                <div className="flex items-start gap-4">
                   {/* Date badge */}
-                  <div className="flex min-w-[70px] flex-col items-center rounded-lg bg-muted px-3 py-2 text-center">
-                    <span className="text-xs text-muted-foreground">
+                  <div className="flex min-w-[70px] flex-col items-center rounded-xl bg-stone-100 px-3 py-2 text-center">
+                    <span className="text-xs text-stone-500">
                       {days < 0
                         ? "Vorbei"
                         : days === 0
@@ -229,7 +227,7 @@ export default function DeadlinesPage() {
                         ? "Morgen"
                         : `${days} Tage`}
                     </span>
-                    <span className="text-sm font-semibold">
+                    <span className="text-sm font-semibold text-stone-800 tabular-nums">
                       {new Date(d.dueDate + "T00:00:00").toLocaleDateString(
                         "de-DE",
                         { day: "numeric", month: "short" }
@@ -240,14 +238,13 @@ export default function DeadlinesPage() {
                   {/* Content */}
                   <div className="flex-1 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge
-                        variant="secondary"
-                        className={TYPE_COLORS[d.type]}
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${TYPE_COLORS[d.type]}`}
                       >
                         {DEADLINE_TYPE_LABELS[d.type]}
-                      </Badge>
+                      </span>
                       {subject && (
-                        <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1.5 text-sm text-stone-500">
                           <span
                             className="inline-block h-2.5 w-2.5 rounded-full"
                             style={{ backgroundColor: subject.color }}
@@ -256,13 +253,13 @@ export default function DeadlinesPage() {
                         </span>
                       )}
                     </div>
-                    <p className="font-medium">{d.title}</p>
+                    <p className="font-medium text-stone-800">{d.title}</p>
                     {d.notes && (
-                      <p className="text-sm text-muted-foreground line-clamp-2">
+                      <p className="text-sm text-stone-500 line-clamp-2">
                         {d.notes}
                       </p>
                     )}
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-stone-400">
                       {formatDate(d.dueDate)}
                     </p>
 
@@ -270,7 +267,7 @@ export default function DeadlinesPage() {
                     <button
                       type="button"
                       onClick={() => toggleMaterials(d.id)}
-                      className="mt-1.5 flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100"
+                      className="mt-1.5 flex items-center gap-1 text-xs text-stone-500 hover:text-stone-800"
                     >
                       <Paperclip className="h-3 w-3" />
                       <span>Materialien ({getMaterialCount(d.id)})</span>
@@ -291,27 +288,23 @@ export default function DeadlinesPage() {
 
                   {/* Actions */}
                   <div className="flex flex-col gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-emerald-600 hover:text-emerald-700"
+                    <button
+                      className="h-8 w-8 flex items-center justify-center rounded-full text-green-600 hover:bg-green-50 transition-colors"
                       title="Erledigt"
                       onClick={() => removeDeadline(d.id)}
                     >
                       <CheckCircle2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
+                    </button>
+                    <button
+                      className="h-8 w-8 flex items-center justify-center rounded-full text-red-500 hover:bg-red-50 transition-colors"
                       title="Loeschen"
                       onClick={() => setConfirmDeleteId(d.id)}
                     >
                       <Trash2 className="h-4 w-4" />
-                    </Button>
+                    </button>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             );
           })}
         </div>
@@ -319,15 +312,15 @@ export default function DeadlinesPage() {
 
       {/* New Deadline Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Neue Deadline</DialogTitle>
+            <DialogTitle className="text-stone-900">Neue Deadline</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="space-y-2">
-              <Label>Fach</Label>
+              <Label className="text-xs text-stone-500">Fach</Label>
               <Select value={formSubjectId} onValueChange={(v) => v && setFormSubjectId(v)}>
-                <SelectTrigger>
+                <SelectTrigger className="rounded-xl border-stone-200">
                   <SelectValue placeholder="Fach waehlen" />
                 </SelectTrigger>
                 <SelectContent>
@@ -347,21 +340,22 @@ export default function DeadlinesPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Titel</Label>
+              <Label className="text-xs text-stone-500">Titel</Label>
               <Input
                 value={formTitle}
                 onChange={(e) => setFormTitle(e.target.value)}
                 placeholder="z.B. Mathe Klausur Kapitel 5"
+                className="rounded-xl border-stone-200"
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Typ</Label>
+              <Label className="text-xs text-stone-500">Typ</Label>
               <Select
                 value={formType}
                 onValueChange={(v) => v && setFormType(v as DeadlineType)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="rounded-xl border-stone-200">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -375,31 +369,33 @@ export default function DeadlinesPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Datum</Label>
+              <Label className="text-xs text-stone-500">Datum</Label>
               <Input
                 type="date"
                 value={formDate}
                 onChange={(e) => setFormDate(e.target.value)}
+                className="rounded-xl border-stone-200"
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Notizen (optional)</Label>
+              <Label className="text-xs text-stone-500">Notizen (optional)</Label>
               <Textarea
                 value={formNotes}
                 onChange={(e) => setFormNotes(e.target.value)}
                 placeholder="Weitere Details..."
                 rows={3}
+                className="rounded-xl border-stone-200"
               />
             </div>
 
-            <Button
+            <button
               onClick={handleAdd}
-              className="w-full"
               disabled={!formSubjectId || !formTitle.trim() || !formDate}
+              className="w-full bg-stone-900 text-white rounded-xl px-5 py-2.5 font-medium hover:bg-stone-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Deadline erstellen
-            </Button>
+            </button>
           </div>
         </DialogContent>
       </Dialog>
@@ -409,26 +405,26 @@ export default function DeadlinesPage() {
         open={!!confirmDeleteId}
         onOpenChange={() => setConfirmDeleteId(null)}
       >
-        <DialogContent>
+        <DialogContent className="rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Deadline loeschen?</DialogTitle>
+            <DialogTitle className="text-stone-900">Deadline loeschen?</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-stone-500">
             Diese Deadline wird unwiderruflich geloescht.
           </p>
           <div className="flex justify-end gap-2 pt-4">
-            <Button
-              variant="outline"
+            <button
+              className="bg-stone-100 text-stone-700 rounded-xl px-4 py-2 font-medium hover:bg-stone-200 transition-colors"
               onClick={() => setConfirmDeleteId(null)}
             >
               Abbrechen
-            </Button>
-            <Button
-              variant="destructive"
+            </button>
+            <button
+              className="bg-red-50 text-red-700 rounded-xl px-4 py-2 font-medium hover:bg-red-100 transition-colors"
               onClick={() => confirmDeleteId && handleDelete(confirmDeleteId)}
             >
               Loeschen
-            </Button>
+            </button>
           </div>
         </DialogContent>
       </Dialog>

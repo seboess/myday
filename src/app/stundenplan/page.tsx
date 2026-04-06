@@ -12,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { MaterialUpload } from "@/components/material-upload";
 
@@ -81,35 +80,37 @@ export default function StundenplanPage() {
   if (subjects.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 px-4 py-20 text-center">
-        <BookOpen className="h-12 w-12 text-muted-foreground" />
-        <h1 className="text-2xl font-bold">Stundenplan</h1>
-        <p className="text-muted-foreground">
+        <BookOpen className="h-12 w-12 text-stone-300" />
+        <h1 className="text-2xl font-semibold text-stone-900">Stundenplan</h1>
+        <p className="text-stone-500">
           Erstelle zuerst deine F&auml;cher in den Einstellungen
         </p>
         <Link href="/einstellungen">
-          <Button>Zu den Einstellungen</Button>
+          <button className="bg-stone-900 text-white rounded-xl px-5 py-2.5 font-medium hover:bg-stone-800 transition-colors">
+            Zu den Einstellungen
+          </button>
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="p-4">
-      <h1 className="mb-4 text-2xl font-bold">Stundenplan</h1>
+    <div className="p-4 pb-24">
+      <h1 className="mb-4 text-2xl font-semibold text-stone-900">Stundenplan</h1>
 
       {/* Scrollable grid wrapper */}
-      <div className="overflow-x-auto rounded-lg border border-border">
+      <div className="overflow-x-auto rounded-2xl bg-stone-50">
         <table className="w-full min-w-[600px] border-collapse">
           <thead>
             <tr>
               {/* Time column header */}
-              <th className="w-[100px] border-b border-r border-border bg-muted/50 px-2 py-2.5 text-left text-xs font-medium text-muted-foreground">
+              <th className="w-[100px] px-2 py-2.5 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                 Stunde
               </th>
               {DAYS.map((day) => (
                 <th
                   key={day}
-                  className="border-b border-border bg-muted/50 px-2 py-2.5 text-center text-sm font-semibold"
+                  className="px-2 py-2.5 text-center text-sm font-medium text-stone-800"
                 >
                   <span className="hidden sm:inline">
                     {DAY_LABELS[day]}
@@ -123,8 +124,10 @@ export default function StundenplanPage() {
             {PERIODS.map((period) => (
               <tr key={period}>
                 {/* Period label */}
-                <td className="border-b border-r border-border bg-muted/30 px-2 py-1">
-                  <div className="text-sm font-semibold">{period}.</div>
+                <td className="px-2 py-1">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-stone-100 text-sm font-medium text-stone-600">
+                    {period}
+                  </div>
                 </td>
 
                 {DAYS.map((day) => {
@@ -135,9 +138,9 @@ export default function StundenplanPage() {
                     return (
                       <td
                         key={day}
-                        className="border-b border-border bg-muted/20 p-0"
+                        className="p-1"
                       >
-                        <div className="flex min-h-[56px] items-center justify-center text-muted-foreground/30">
+                        <div className="flex min-h-[56px] items-center justify-center rounded-xl bg-stone-100/50 text-stone-300">
                           &mdash;
                         </div>
                       </td>
@@ -152,20 +155,21 @@ export default function StundenplanPage() {
                   if (subject) {
                     const { r, g, b } = hexToRgb(subject.color);
                     bgStyle = {
-                      backgroundColor: `rgba(${r}, ${g}, ${b}, 0.15)`,
-                      borderLeft: `3px solid ${subject.color}`,
+                      backgroundColor: `rgba(${r}, ${g}, ${b}, 0.12)`,
                     };
                   }
 
                   return (
                     <td
                       key={day}
-                      className="border-b border-border p-0"
+                      className="p-1"
                     >
                       <button
                         type="button"
                         onClick={() => handleCellClick(day, period)}
-                        className="flex h-full min-h-[56px] w-full flex-col items-center justify-center px-1 py-1.5 transition-colors hover:bg-muted/40"
+                        className={`flex h-full min-h-[56px] w-full flex-col items-center justify-center rounded-xl px-1 py-1.5 transition-colors ${
+                          subject ? '' : 'bg-white hover:bg-stone-100'
+                        }`}
                         style={bgStyle}
                       >
                         {subject ? (
@@ -177,19 +181,16 @@ export default function StundenplanPage() {
                               {subject.name}
                             </span>
                             {subject.type === "LK" && (
-                              <span
-                                className="mt-0.5 inline-block rounded px-1 py-px text-[9px] font-bold uppercase leading-none text-white"
-                                style={{ backgroundColor: subject.color }}
-                              >
+                              <span className="mt-0.5 bg-stone-200 text-stone-700 text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase leading-none">
                                 LK
                               </span>
                             )}
                           </>
                         ) : (
-                          <Plus className="h-4 w-4 text-muted-foreground/40" />
+                          <Plus className="h-4 w-4 text-stone-300" />
                         )}
                         {timeLabel && (
-                          <span className="mt-0.5 text-[9px] leading-tight text-muted-foreground">
+                          <span className="mt-0.5 text-[9px] leading-tight text-stone-400">
                             {timeLabel}
                           </span>
                         )}
@@ -205,9 +206,9 @@ export default function StundenplanPage() {
 
       {/* Subject selection dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-xs">
+        <DialogContent className="max-w-xs rounded-2xl">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-stone-900">
               {selectedCell
                 ? `${DAY_LABELS[selectedCell.day]}, ${selectedCell.period}. Stunde`
                 : "Fach w\u00e4hlen"}
@@ -224,26 +225,22 @@ export default function StundenplanPage() {
                   key={subject.id}
                   type="button"
                   onClick={() => handleSelectSubject(subject.id)}
-                  className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm font-medium transition-all hover:scale-[1.02] ${
+                  className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-all hover:scale-[1.02] ${
                     isActive
-                      ? "ring-2 ring-offset-1"
-                      : "border-border"
+                      ? "ring-2 ring-stone-900 ring-offset-1"
+                      : ""
                   }`}
                   style={{
                     backgroundColor: `rgba(${r}, ${g}, ${b}, 0.12)`,
-                    borderColor: isActive ? subject.color : undefined,
                   }}
                 >
                   <span
                     className="h-3 w-3 shrink-0 rounded-full"
                     style={{ backgroundColor: subject.color }}
                   />
-                  <span className="truncate">{subject.name}</span>
+                  <span className="truncate text-stone-800">{subject.name}</span>
                   {subject.type === "LK" && (
-                    <span
-                      className="ml-auto shrink-0 rounded px-1 py-px text-[9px] font-bold uppercase leading-none text-white"
-                      style={{ backgroundColor: subject.color }}
-                    >
+                    <span className="ml-auto shrink-0 bg-stone-200 text-stone-700 text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase leading-none">
                       LK
                     </span>
                   )}
@@ -253,21 +250,20 @@ export default function StundenplanPage() {
           </div>
 
           {selectedSlot && (
-            <Button
-              variant="outline"
-              className="mt-2 w-full gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            <button
+              className="mt-2 w-full flex items-center justify-center gap-2 bg-red-50 text-red-700 rounded-xl px-4 py-2.5 font-medium hover:bg-red-100 transition-colors"
               onClick={handleClear}
             >
               <X className="h-4 w-4" />
               Fach entfernen
-            </Button>
+            </button>
           )}
 
           {selectedCell && selectedSlot && (
             <>
-              <Separator className="my-3" />
+              <Separator className="my-3 bg-stone-100" />
               <div>
-                <h4 className="mb-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                <h4 className="mb-2 text-sm font-medium text-stone-800">
                   Materialien
                 </h4>
                 <MaterialUpload

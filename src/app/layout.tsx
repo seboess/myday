@@ -35,7 +35,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="de" className={`${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-neutral-50 font-[var(--font-inter)]">
+      <body className="min-h-full flex flex-col bg-white font-[var(--font-inter)]">
         <Nav />
         <ServiceWorkerRegister />
         <main className="flex-1 pb-20">{children}</main>

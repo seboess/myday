@@ -10,10 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -28,15 +25,15 @@ const SEMESTERS: Semester[] = ["Q1", "Q2", "Q3", "Q4"];
 
 function getPointsColor(points: number | null): string {
   if (points === null) return "";
-  if (points >= 10) return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300";
-  if (points >= 5) return "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300";
-  return "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300";
+  if (points >= 10) return "bg-green-50 text-green-800";
+  if (points >= 5) return "bg-amber-50 text-amber-800";
+  return "bg-red-50 text-red-800";
 }
 
 function getAbiColor(grade: number): string {
-  if (grade <= 2.0) return "text-emerald-600 dark:text-emerald-400";
-  if (grade <= 3.0) return "text-amber-600 dark:text-amber-400";
-  return "text-red-600 dark:text-red-400";
+  if (grade <= 2.0) return "text-green-600";
+  if (grade <= 3.0) return "text-amber-600";
+  return "text-red-600";
 }
 
 export default function NotenPage() {
@@ -92,7 +89,6 @@ export default function NotenPage() {
     const gkSubjects = subjects.filter((s) => s.type === "GK");
     const lkSubjects = subjects.filter((s) => s.type === "LK");
 
-    // Collect all semester averages
     const gkAverages: number[] = [];
     for (const sub of gkSubjects) {
       for (const sem of SEMESTERS) {
@@ -109,14 +105,11 @@ export default function NotenPage() {
       }
     }
 
-    // Need at least some data
     if (gkAverages.length === 0 && lkAverages.length === 0) return null;
 
-    // Take best 24 GK results (or all if fewer)
     const sortedGK = [...gkAverages].sort((a, b) => b - a);
     const bestGK = sortedGK.slice(0, 24);
 
-    // Take best 8 LK results (or all if fewer), doubled
     const sortedLK = [...lkAverages].sort((a, b) => b - a);
     const bestLK = sortedLK.slice(0, 8);
 
@@ -127,17 +120,15 @@ export default function NotenPage() {
   }
 
   const blockIPoints = computeBlockI();
-  // For projection, assume Block II adds ~100 points (5 exams * 4x * 5 average = 100)
-  // We'll project from Block I alone scaled to 600 max, then project total
   const projectedTotal = blockIPoints !== null ? Math.round(blockIPoints * (900 / 600)) : null;
   const abiGrade = projectedTotal !== null ? calculateAbiGrade(projectedTotal) : null;
 
   if (subjects.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 p-8 text-center min-h-[60vh]">
-        <BookOpen className="h-16 w-16 text-muted-foreground/40" />
-        <h1 className="text-2xl font-bold">Noten-Tracker</h1>
-        <p className="text-muted-foreground max-w-sm">
+        <BookOpen className="h-16 w-16 text-stone-300" />
+        <h1 className="text-2xl font-semibold text-stone-900">Noten-Tracker</h1>
+        <p className="text-stone-500 max-w-sm">
           Erstelle zuerst deine F&auml;cher in den Einstellungen
         </p>
       </div>
@@ -146,25 +137,25 @@ export default function NotenPage() {
 
   return (
     <div className="p-4 pb-24 space-y-6">
-      <h1 className="text-2xl font-bold">Noten-Tracker</h1>
+      <h1 className="text-2xl font-semibold text-stone-900">Noten-Tracker</h1>
 
       {/* Grade Table */}
       <div className="overflow-x-auto -mx-4 px-4">
         <table className="w-full min-w-[480px] border-collapse">
           <thead>
             <tr>
-              <th className="text-left py-2 px-3 text-sm font-semibold text-muted-foreground border-b">
+              <th className="text-left py-2.5 px-3 text-xs font-medium text-stone-500 uppercase tracking-wider border-b border-stone-100">
                 Fach
               </th>
               {SEMESTERS.map((sem) => (
                 <th
                   key={sem}
-                  className="text-center py-2 px-3 text-sm font-semibold text-muted-foreground border-b w-[70px]"
+                  className="text-center py-2.5 px-3 text-xs font-medium text-stone-500 uppercase tracking-wider border-b border-stone-100 w-[70px]"
                 >
                   {sem}
                 </th>
               ))}
-              <th className="text-center py-2 px-3 text-sm font-semibold text-muted-foreground border-b w-[70px]">
+              <th className="text-center py-2.5 px-3 text-xs font-medium text-stone-500 uppercase tracking-wider border-b border-stone-100 w-[70px]">
                 &Oslash;
               </th>
             </tr>
@@ -181,18 +172,18 @@ export default function NotenPage() {
                   : null;
 
               return (
-                <tr key={subject.id} className="border-b last:border-b-0 hover:bg-muted/30">
+                <tr key={subject.id} className="border-b border-stone-100 last:border-b-0">
                   <td className="py-2.5 px-3">
                     <div className="flex items-center gap-2">
                       <div
                         className="w-2.5 h-2.5 rounded-full shrink-0"
                         style={{ backgroundColor: subject.color }}
                       />
-                      <span className="text-sm font-medium truncate">{subject.name}</span>
+                      <span className="text-sm font-medium text-stone-800 truncate">{subject.name}</span>
                       {subject.type === "LK" && (
-                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 shrink-0">
+                        <span className="bg-stone-200 text-stone-700 text-[10px] font-bold px-1.5 py-0.5 rounded-md shrink-0">
                           LK
-                        </Badge>
+                        </span>
                       )}
                     </div>
                   </td>
@@ -202,10 +193,10 @@ export default function NotenPage() {
                       <td key={sem} className="py-1.5 px-1.5 text-center">
                         <button
                           onClick={() => openDialog(subject.id, sem)}
-                          className={`w-full rounded-md py-1.5 px-2 text-sm font-semibold transition-colors hover:ring-2 hover:ring-ring/20 ${
+                          className={`w-full rounded-xl py-1.5 px-2 text-sm font-semibold tabular-nums transition-colors ${
                             avg !== null
                               ? getPointsColor(avg)
-                              : "bg-muted/50 text-muted-foreground/40 hover:bg-muted"
+                              : "bg-stone-50 text-stone-300 hover:bg-stone-100"
                           }`}
                         >
                           {avg !== null ? avg.toFixed(1) : "-"}
@@ -215,8 +206,8 @@ export default function NotenPage() {
                   })}
                   <td className="py-1.5 px-1.5 text-center">
                     <span
-                      className={`text-sm font-bold ${
-                        overallAvg !== null ? getPointsColor(overallAvg).replace(/bg-\S+/g, "") : "text-muted-foreground/40"
+                      className={`text-sm font-bold tabular-nums ${
+                        overallAvg !== null ? (overallAvg >= 10 ? "text-green-700" : overallAvg >= 5 ? "text-amber-700" : "text-red-700") : "text-stone-300"
                       }`}
                     >
                       {overallAvg !== null ? overallAvg.toFixed(1) : "-"}
@@ -230,34 +221,32 @@ export default function NotenPage() {
       </div>
 
       {/* Abi-Schnitt Projection */}
-      <Card>
-        <CardContent className="pt-6 pb-5 text-center space-y-2">
-          {blockIPoints !== null && abiGrade !== null ? (
-            <>
-              <p className="text-sm text-muted-foreground">Voraussichtlicher Abi-Schnitt</p>
-              <p className={`text-5xl font-bold tracking-tight ${getAbiColor(abiGrade)}`}>
-                {abiGrade.toFixed(1)}
-              </p>
-              <p className="text-xs text-muted-foreground mt-2">
-                Block I: ~{blockIPoints} Punkte (basierend auf aktuellen Noten)
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="text-sm text-muted-foreground">Abi-Schnitt Prognose</p>
-              <p className="text-muted-foreground/60 text-sm mt-1">
-                Noch nicht genug Noten f&uuml;r eine Prognose
-              </p>
-            </>
-          )}
-        </CardContent>
-      </Card>
+      <div className="bg-stone-50 rounded-2xl p-6 text-center space-y-2">
+        {blockIPoints !== null && abiGrade !== null ? (
+          <>
+            <p className="text-xs font-medium text-stone-500 uppercase tracking-wider">Voraussichtlicher Abi-Schnitt</p>
+            <p className={`text-5xl font-bold tracking-tight tabular-nums ${getAbiColor(abiGrade)}`}>
+              {abiGrade.toFixed(1)}
+            </p>
+            <p className="text-xs text-stone-400 mt-2">
+              Block I: ~{blockIPoints} Punkte (basierend auf aktuellen Noten)
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-xs font-medium text-stone-500 uppercase tracking-wider">Abi-Schnitt Prognose</p>
+            <p className="text-stone-400 text-sm mt-1">
+              Noch nicht genug Noten f&uuml;r eine Prognose
+            </p>
+          </>
+        )}
+      </div>
 
       {/* Grade Detail Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-stone-900">
               {selectedSubject && (
                 <div
                   className="w-3 h-3 rounded-full shrink-0"
@@ -266,9 +255,9 @@ export default function NotenPage() {
               )}
               <span className="truncate">{selectedSubject?.name}</span>
               {selectedSubject?.type === "LK" && (
-                <Badge variant="secondary" className="text-xs">LK</Badge>
+                <span className="bg-stone-200 text-stone-700 text-[10px] font-bold px-1.5 py-0.5 rounded-md">LK</span>
               )}
-              <span className="text-muted-foreground font-normal text-sm ml-auto">
+              <span className="text-stone-400 font-normal text-sm ml-auto">
                 {selectedSemester && SEMESTER_LABELS[selectedSemester]}
               </span>
             </DialogTitle>
@@ -277,40 +266,41 @@ export default function NotenPage() {
           {/* Existing grades */}
           <div className="space-y-2">
             {dialogGrades.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
+              <p className="text-sm text-stone-400 text-center py-4">
                 Noch keine Noten eingetragen
               </p>
             ) : (
               dialogGrades.map((grade) => (
                 <div
                   key={grade.id}
-                  className="flex items-center gap-2 rounded-lg border p-2.5"
+                  className="flex items-center gap-2 rounded-xl bg-stone-50 p-2.5"
                 >
-                  <Badge
-                    variant={grade.type === "klausur" ? "default" : "secondary"}
-                    className="text-[10px] shrink-0"
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                      grade.type === "klausur"
+                        ? "bg-red-50 text-red-700"
+                        : "bg-blue-50 text-blue-700"
+                    }`}
                   >
                     {grade.type === "klausur" ? "Klausur" : "Allgemein"}
-                  </Badge>
+                  </span>
                   {grade.label && (
-                    <span className="text-xs text-muted-foreground truncate">
+                    <span className="text-xs text-stone-500 truncate">
                       {grade.label}
                     </span>
                   )}
-                  <span className="ml-auto font-semibold text-sm shrink-0">
+                  <span className="ml-auto font-semibold text-sm text-stone-800 shrink-0 tabular-nums">
                     {grade.points} P
                   </span>
-                  <span className="text-xs text-muted-foreground shrink-0">
+                  <span className="text-xs text-stone-400 shrink-0">
                     {grade.weight}%
                   </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                  <button
+                    className="h-7 w-7 shrink-0 flex items-center justify-center rounded-full text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                     onClick={() => removeGrade(grade.id)}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  </button>
                 </div>
               ))
             )}
@@ -319,24 +309,24 @@ export default function NotenPage() {
           {/* Semester average */}
           {dialogAverage !== null && (
             <div
-              className={`rounded-lg p-3 text-center ${getPointsColor(dialogAverage)}`}
+              className={`rounded-xl p-3 text-center ${getPointsColor(dialogAverage)}`}
             >
               <span className="text-xs font-medium">Halbjahresschnitt</span>
-              <span className="text-lg font-bold ml-2">{dialogAverage.toFixed(1)} Punkte</span>
+              <span className="text-lg font-bold ml-2 tabular-nums">{dialogAverage.toFixed(1)} Punkte</span>
             </div>
           )}
 
           {/* Add grade form */}
-          <div className="border-t pt-4 space-y-3">
-            <p className="text-sm font-semibold flex items-center gap-1.5">
+          <div className="border-t border-stone-100 pt-4 space-y-3">
+            <p className="text-sm font-medium text-stone-800 flex items-center gap-1.5">
               <Plus className="h-3.5 w-3.5" /> Note hinzuf&uuml;gen
             </p>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">Typ</Label>
+                <Label className="text-xs text-stone-500">Typ</Label>
                 <Select value={newType} onValueChange={(v) => setNewType(v as GradeType)}>
-                  <SelectTrigger className="h-9">
+                  <SelectTrigger className="h-9 rounded-xl border-stone-200">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -347,7 +337,7 @@ export default function NotenPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs">Punkte (0-15)</Label>
+                <Label className="text-xs text-stone-500">Punkte (0-15)</Label>
                 <Input
                   type="number"
                   min={0}
@@ -355,12 +345,12 @@ export default function NotenPage() {
                   value={newPoints}
                   onChange={(e) => setNewPoints(e.target.value)}
                   placeholder="0-15"
-                  className="h-9"
+                  className="h-9 rounded-xl border-stone-200"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs">Gewichtung (%)</Label>
+                <Label className="text-xs text-stone-500">Gewichtung (%)</Label>
                 <Input
                   type="number"
                   min={1}
@@ -368,25 +358,28 @@ export default function NotenPage() {
                   value={newWeight}
                   onChange={(e) => setNewWeight(e.target.value)}
                   placeholder="50"
-                  className="h-9"
+                  className="h-9 rounded-xl border-stone-200"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs">Bezeichnung</Label>
+                <Label className="text-xs text-stone-500">Bezeichnung</Label>
                 <Input
                   value={newLabel}
                   onChange={(e) => setNewLabel(e.target.value)}
                   placeholder="Optional"
-                  className="h-9"
+                  className="h-9 rounded-xl border-stone-200"
                 />
               </div>
             </div>
 
-            <Button onClick={handleAddGrade} className="w-full" size="sm">
-              <Plus className="h-4 w-4 mr-1.5" />
+            <button
+              onClick={handleAddGrade}
+              className="w-full bg-stone-900 text-white rounded-xl px-5 py-2.5 font-medium hover:bg-stone-800 transition-colors flex items-center justify-center gap-1.5"
+            >
+              <Plus className="h-4 w-4" />
               Hinzuf&uuml;gen
-            </Button>
+            </button>
           </div>
         </DialogContent>
       </Dialog>

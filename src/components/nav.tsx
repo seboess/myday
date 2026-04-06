@@ -8,7 +8,7 @@ const tabs = [
     href: "/",
     label: "Heute",
     icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
         <polyline points="9 22 9 12 15 12 15 22" />
       </svg>
@@ -18,7 +18,7 @@ const tabs = [
     href: "/stundenplan",
     label: "Stundenplan",
     icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
         <line x1="16" y1="2" x2="16" y2="6" />
         <line x1="8" y1="2" x2="8" y2="6" />
@@ -30,7 +30,7 @@ const tabs = [
     href: "/gym",
     label: "Gym",
     icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M6.5 6.5h11" />
         <path d="M6.5 17.5h11" />
         <path d="M12 6.5v11" />
@@ -45,7 +45,7 @@ const tabs = [
     href: "/noten",
     label: "Noten",
     icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
       </svg>
     ),
@@ -54,7 +54,7 @@ const tabs = [
     href: "/deadlines",
     label: "Deadlines",
     icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10" />
         <polyline points="12 6 12 12 16 14" />
       </svg>
@@ -78,16 +78,16 @@ export default function Nav() {
 
   return (
     <>
-      {/* Header — Notion-style: clean white, no gradient */}
-      <header className="sticky top-0 z-40 border-b border-neutral-200/70 bg-white">
-        <div className="flex items-center justify-between px-4 py-3">
+      {/* Header — Material You: white, subtle shadow, no border */}
+      <header className="sticky top-0 z-40 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+        <div className="flex items-center justify-between px-5 py-3.5">
           <div>
-            <h1 className="text-lg font-semibold tracking-tight text-neutral-900">MyDay</h1>
-            <p className="text-xs text-neutral-400">{formatDateGerman()}</p>
+            <h1 className="text-xl font-semibold text-stone-900">MyDay</h1>
+            <p className="text-xs text-stone-400">{formatDateGerman()}</p>
           </div>
           <Link
             href="/einstellungen"
-            className="rounded-md p-2 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-600"
+            className="rounded-full p-2.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
             aria-label="Einstellungen"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -98,8 +98,8 @@ export default function Nav() {
         </div>
       </header>
 
-      {/* Bottom Navigation — Notion-style: subtle, no shadows */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-neutral-200/70 bg-white">
+      {/* Bottom Navigation — Material You: pill-shaped active indicator */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white shadow-[0_-1px_3px_rgba(0,0,0,0.05)]">
         <div className="flex items-center justify-around px-1 pb-[env(safe-area-inset-bottom)]">
           {tabs.map((tab) => {
             const isActive =
@@ -111,15 +111,17 @@ export default function Nav() {
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] transition-colors ${
+                className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-[10px] transition-colors ${
                   isActive
-                    ? "text-neutral-900 font-medium"
-                    : "text-neutral-400 hover:text-neutral-600"
+                    ? "text-stone-900 font-medium"
+                    : "text-stone-400 hover:text-stone-600"
                 }`}
               >
                 <div
-                  className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
-                    isActive ? "bg-neutral-100 text-neutral-900" : ""
+                  className={`flex items-center justify-center rounded-full transition-all ${
+                    isActive
+                      ? "bg-stone-900 text-white px-5 py-1.5"
+                      : "px-3 py-1.5"
                   }`}
                 >
                   {tab.icon}

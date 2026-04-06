@@ -10,12 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import {
   Trash2,
   Plus,
@@ -120,7 +116,6 @@ export default function EinstellungenPage() {
       }
     };
     reader.readAsText(file);
-    // Reset file input
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
@@ -135,7 +130,6 @@ export default function EinstellungenPage() {
 
   async function handleReset() {
     localStorage.removeItem("myday-store");
-    // Clear IndexedDB
     const dbs = await window.indexedDB.databases();
     for (const db of dbs) {
       if (db.name) window.indexedDB.deleteDatabase(db.name);
@@ -144,87 +138,86 @@ export default function EinstellungenPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-2xl font-bold">Einstellungen</h1>
+    <div className="px-4 pb-24 pt-4 space-y-8">
+      <h1 className="text-2xl font-semibold text-stone-900">Einstellungen</h1>
 
       {/* --- Section: Faecher --- */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Faecher verwalten</h2>
-          <Button onClick={openNewSubject} size="sm">
-            <Plus className="mr-2 h-4 w-4" />
+          <h2 className="text-xs font-medium text-stone-500 uppercase tracking-wider">Faecher verwalten</h2>
+          <button
+            onClick={openNewSubject}
+            className="bg-stone-900 text-white rounded-xl px-4 py-2 text-sm font-medium hover:bg-stone-800 transition-colors flex items-center gap-1.5"
+          >
+            <Plus className="h-4 w-4" />
             Neues Fach
-          </Button>
+          </button>
         </div>
 
         {subjects.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-8 text-center">
-            <BookOpen className="h-10 w-10 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
+            <BookOpen className="h-10 w-10 text-stone-300" />
+            <p className="text-sm text-stone-400">
               Noch keine Faecher angelegt.
             </p>
           </div>
         ) : (
           <div className="space-y-2">
             {subjects.map((s) => (
-              <Card key={s.id}>
-                <CardContent className="flex items-center gap-3 p-3">
-                  <span
-                    className="inline-block h-4 w-4 rounded-full shrink-0"
-                    style={{ backgroundColor: s.color }}
-                  />
-                  <span className="flex-1 font-medium">{s.name}</span>
-                  <Badge
-                    variant="outline"
-                    className={
-                      s.type === "LK"
-                        ? "border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300"
-                        : ""
-                    }
-                  >
-                    {s.type}
-                  </Badge>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => openEditSubject(s)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive hover:text-destructive"
-                    onClick={() => setDeleteSubjectId(s.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </CardContent>
-              </Card>
+              <div key={s.id} className="bg-stone-50 rounded-xl p-3 flex items-center gap-3">
+                <span
+                  className="inline-block h-4 w-4 rounded-full shrink-0"
+                  style={{ backgroundColor: s.color }}
+                />
+                <span className="flex-1 font-medium text-stone-800">{s.name}</span>
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                    s.type === "LK"
+                      ? "bg-amber-50 text-amber-700"
+                      : "bg-stone-200 text-stone-600"
+                  }`}
+                >
+                  {s.type}
+                </span>
+                <button
+                  className="h-8 w-8 flex items-center justify-center rounded-full text-stone-400 hover:bg-stone-200 hover:text-stone-700 transition-colors"
+                  onClick={() => openEditSubject(s)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+                <button
+                  className="h-8 w-8 flex items-center justify-center rounded-full text-stone-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                  onClick={() => setDeleteSubjectId(s.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
             ))}
           </div>
         )}
       </section>
 
-      <Separator />
+      <div className="border-t border-stone-100" />
 
       {/* --- Section: Backup --- */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Daten-Backup</h2>
+        <h2 className="text-xs font-medium text-stone-500 uppercase tracking-wider">Daten-Backup</h2>
 
         <div className="flex flex-wrap gap-3">
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="mr-2 h-4 w-4" />
+          <button
+            className="bg-stone-100 text-stone-700 rounded-xl px-4 py-2 font-medium hover:bg-stone-200 transition-colors flex items-center gap-2"
+            onClick={handleExport}
+          >
+            <Download className="h-4 w-4" />
             Daten exportieren
-          </Button>
-          <Button
-            variant="outline"
+          </button>
+          <button
+            className="bg-stone-100 text-stone-700 rounded-xl px-4 py-2 font-medium hover:bg-stone-200 transition-colors flex items-center gap-2"
             onClick={() => fileInputRef.current?.click()}
           >
-            <Upload className="mr-2 h-4 w-4" />
+            <Upload className="h-4 w-4" />
             Daten importieren
-          </Button>
+          </button>
           <input
             ref={fileInputRef}
             type="file"
@@ -234,7 +227,7 @@ export default function EinstellungenPage() {
           />
         </div>
 
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-stone-400">
           Letztes Backup:{" "}
           {lastBackupDate
             ? new Date(lastBackupDate).toLocaleDateString("de-DE", {
@@ -248,55 +241,56 @@ export default function EinstellungenPage() {
         </p>
       </section>
 
-      <Separator />
+      <div className="border-t border-stone-100" />
 
       {/* --- Section: Reset --- */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Daten zuruecksetzen</h2>
-        <p className="text-sm text-muted-foreground">
+        <h2 className="text-xs font-medium text-stone-500 uppercase tracking-wider">Daten zuruecksetzen</h2>
+        <p className="text-sm text-stone-500">
           Loescht alle gespeicherten Daten unwiderruflich. Erstelle vorher ein
           Backup!
         </p>
-        <Button
-          variant="destructive"
+        <button
+          className="bg-red-50 text-red-700 rounded-xl px-5 py-2.5 font-medium hover:bg-red-100 transition-colors flex items-center gap-2"
           onClick={() => setResetStep(1)}
         >
-          <Trash2 className="mr-2 h-4 w-4" />
+          <Trash2 className="h-4 w-4" />
           Alle Daten loeschen
-        </Button>
+        </button>
       </section>
 
       {/* --- Dialogs --- */}
 
       {/* New/Edit Subject */}
       <Dialog open={subjectDialogOpen} onOpenChange={setSubjectDialogOpen}>
-        <DialogContent>
+        <DialogContent className="rounded-2xl">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-stone-900">
               {editingSubject ? "Fach bearbeiten" : "Neues Fach"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="space-y-2">
-              <Label>Name</Label>
+              <Label className="text-xs text-stone-500">Name</Label>
               <Input
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
                 placeholder="z.B. Mathematik"
+                className="rounded-xl border-stone-200"
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Farbe</Label>
+              <Label className="text-xs text-stone-500">Farbe</Label>
               <div className="flex flex-wrap gap-2">
                 {SUBJECT_COLORS.map((color) => (
                   <button
                     key={color}
                     onClick={() => setFormColor(color)}
-                    className={`h-8 w-8 rounded-full border-2 transition-transform ${
+                    className={`h-8 w-8 rounded-full transition-transform ${
                       formColor === color
-                        ? "scale-110 border-foreground"
-                        : "border-transparent hover:scale-105"
+                        ? "scale-110 ring-2 ring-offset-2 ring-stone-900"
+                        : "hover:scale-105"
                     }`}
                     style={{ backgroundColor: color }}
                   />
@@ -305,32 +299,38 @@ export default function EinstellungenPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Kursart</Label>
+              <Label className="text-xs text-stone-500">Kursart</Label>
               <div className="flex gap-2">
-                <Button
-                  variant={formType === "GK" ? "default" : "outline"}
-                  size="sm"
+                <button
+                  className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+                    formType === "GK"
+                      ? "bg-stone-900 text-white"
+                      : "bg-stone-100 text-stone-700 hover:bg-stone-200"
+                  }`}
                   onClick={() => setFormType("GK")}
                 >
                   GK (Grundkurs)
-                </Button>
-                <Button
-                  variant={formType === "LK" ? "default" : "outline"}
-                  size="sm"
+                </button>
+                <button
+                  className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+                    formType === "LK"
+                      ? "bg-stone-900 text-white"
+                      : "bg-stone-100 text-stone-700 hover:bg-stone-200"
+                  }`}
                   onClick={() => setFormType("LK")}
                 >
                   LK (Leistungskurs)
-                </Button>
+                </button>
               </div>
             </div>
 
-            <Button
+            <button
               onClick={handleSaveSubject}
-              className="w-full"
               disabled={!formName.trim()}
+              className="w-full bg-stone-900 text-white rounded-xl px-5 py-2.5 font-medium hover:bg-stone-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {editingSubject ? "Speichern" : "Fach erstellen"}
-            </Button>
+            </button>
           </div>
         </DialogContent>
       </Dialog>
@@ -340,32 +340,32 @@ export default function EinstellungenPage() {
         open={!!deleteSubjectId}
         onOpenChange={() => setDeleteSubjectId(null)}
       >
-        <DialogContent>
+        <DialogContent className="rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
+            <DialogTitle className="flex items-center gap-2 text-stone-900">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
               Fach loeschen?
             </DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-stone-500">
             Alle Noten und Stundenplan-Eintraege fuer dieses Fach werden
             geloescht. Diese Aktion kann nicht rueckgaengig gemacht werden.
           </p>
           <div className="flex justify-end gap-2 pt-4">
-            <Button
-              variant="outline"
+            <button
+              className="bg-stone-100 text-stone-700 rounded-xl px-4 py-2 font-medium hover:bg-stone-200 transition-colors"
               onClick={() => setDeleteSubjectId(null)}
             >
               Abbrechen
-            </Button>
-            <Button
-              variant="destructive"
+            </button>
+            <button
+              className="bg-red-50 text-red-700 rounded-xl px-4 py-2 font-medium hover:bg-red-100 transition-colors"
               onClick={() =>
                 deleteSubjectId && handleDeleteSubject(deleteSubjectId)
               }
             >
               Fach loeschen
-            </Button>
+            </button>
           </div>
         </DialogContent>
       </Dialog>
@@ -375,76 +375,90 @@ export default function EinstellungenPage() {
         open={!!importConfirmData}
         onOpenChange={() => setImportConfirmData(null)}
       >
-        <DialogContent>
+        <DialogContent className="rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-stone-900">
               <AlertTriangle className="h-5 w-5 text-amber-500" />
               Daten importieren?
             </DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-stone-500">
             Alle aktuellen Daten werden mit dem Backup ueberschrieben. Die App
             wird danach neu geladen.
           </p>
           <div className="flex justify-end gap-2 pt-4">
-            <Button
-              variant="outline"
+            <button
+              className="bg-stone-100 text-stone-700 rounded-xl px-4 py-2 font-medium hover:bg-stone-200 transition-colors"
               onClick={() => setImportConfirmData(null)}
             >
               Abbrechen
-            </Button>
-            <Button onClick={confirmImport}>Importieren</Button>
+            </button>
+            <button
+              className="bg-stone-900 text-white rounded-xl px-4 py-2 font-medium hover:bg-stone-800 transition-colors"
+              onClick={confirmImport}
+            >
+              Importieren
+            </button>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Reset - Step 1 */}
       <Dialog open={resetStep === 1} onOpenChange={() => setResetStep(0)}>
-        <DialogContent>
+        <DialogContent className="rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
+            <DialogTitle className="flex items-center gap-2 text-stone-900">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
               Alle Daten loeschen?
             </DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-stone-500">
             Alle Faecher, Noten, Deadlines und Einstellungen werden
             unwiderruflich geloescht.
           </p>
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setResetStep(0)}>
+            <button
+              className="bg-stone-100 text-stone-700 rounded-xl px-4 py-2 font-medium hover:bg-stone-200 transition-colors"
+              onClick={() => setResetStep(0)}
+            >
               Abbrechen
-            </Button>
-            <Button
-              variant="destructive"
+            </button>
+            <button
+              className="bg-red-50 text-red-700 rounded-xl px-4 py-2 font-medium hover:bg-red-100 transition-colors"
               onClick={() => setResetStep(2)}
             >
               Ja, wirklich loeschen
-            </Button>
+            </button>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Reset - Step 2 (double confirm) */}
       <Dialog open={resetStep === 2} onOpenChange={() => setResetStep(0)}>
-        <DialogContent>
+        <DialogContent className="rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
+            <DialogTitle className="flex items-center gap-2 text-red-700">
               <AlertTriangle className="h-5 w-5" />
               Letzte Warnung!
             </DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-stone-500">
             Dieser Schritt kann nicht rueckgaengig gemacht werden. Bist du dir
             wirklich sicher?
           </p>
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setResetStep(0)}>
+            <button
+              className="bg-stone-100 text-stone-700 rounded-xl px-4 py-2 font-medium hover:bg-stone-200 transition-colors"
+              onClick={() => setResetStep(0)}
+            >
               Abbrechen
-            </Button>
-            <Button variant="destructive" onClick={handleReset}>
+            </button>
+            <button
+              className="bg-red-50 text-red-700 rounded-xl px-4 py-2 font-medium hover:bg-red-100 transition-colors"
+              onClick={handleReset}
+            >
               Endgueltig loeschen
-            </Button>
+            </button>
           </div>
         </DialogContent>
       </Dialog>
