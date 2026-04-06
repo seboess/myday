@@ -1,16 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import Nav from "@/components/nav";
 import { ServiceWorkerRegister } from "@/components/sw-register";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
@@ -30,7 +25,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#171717",
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({
@@ -39,11 +34,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="de"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-white">
+    <html lang="de" className={`${inter.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col bg-neutral-50 font-[var(--font-inter)]">
         <Nav />
         <ServiceWorkerRegister />
         <main className="flex-1 pb-20">{children}</main>

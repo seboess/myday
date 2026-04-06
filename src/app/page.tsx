@@ -8,6 +8,7 @@ import {
   getTodaySchoolDay,
   DAY_OF_WEEK_LABELS,
   DEADLINE_TYPE_LABELS,
+  SCHEDULE,
 } from '@/lib/types';
 import type { Day, DayOfWeek } from '@/lib/types';
 import {
@@ -19,16 +20,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
-const PERIOD_TIMES: Record<number, string> = {
-  1: '08:00 - 08:45',
-  2: '08:50 - 09:35',
-  3: '09:50 - 10:35',
-  4: '10:40 - 11:25',
-  5: '11:45 - 12:30',
-  6: '12:35 - 13:20',
-  7: '13:30 - 14:15',
-  8: '14:20 - 15:05',
-};
 
 function formatDateGerman(): string {
   const now = new Date();
@@ -274,7 +265,7 @@ export default function Home() {
                     </div>
                     {/* Time */}
                     <span className="w-[110px] flex-shrink-0 text-xs text-neutral-400">
-                      {PERIOD_TIMES[slot.period] ?? ''}
+                      {todaySchoolDay ? (SCHEDULE[todaySchoolDay].times[slot.period] ?? '') : ''}
                     </span>
                     {/* Subject */}
                     <div className="flex items-center gap-2">

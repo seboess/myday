@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Plus, X, BookOpen } from "lucide-react";
 import { useStore } from "@/lib/store";
 import type { Day } from "@/lib/types";
-import { DAY_LABELS } from "@/lib/types";
+import { DAY_LABELS, SCHEDULE, MAX_PERIODS } from "@/lib/types";
 import {
   Dialog,
   DialogContent,
@@ -25,18 +25,7 @@ const DAY_SHORT: Record<Day, string> = {
   fr: "Fr",
 };
 
-const PERIODS = [1, 2, 3, 4, 5, 6, 7, 8] as const;
-
-const PERIOD_TIMES: Record<number, string> = {
-  1: "08:00–08:45",
-  2: "08:50–09:35",
-  3: "09:50–10:35",
-  4: "10:40–11:25",
-  5: "11:45–12:30",
-  6: "12:35–13:20",
-  7: "13:30–14:15",
-  8: "14:20–15:05",
-};
+const PERIODS = Array.from({ length: MAX_PERIODS }, (_, i) => i + 1);
 
 function hexToRgb(hex: string) {
   const h = hex.replace("#", "");
@@ -136,14 +125,28 @@ export default function StundenplanPage() {
                 {/* Period label */}
                 <td className="border-b border-r border-border bg-muted/30 px-2 py-1">
                   <div className="text-sm font-semibold">{period}.</div>
-                  <div className="text-[10px] leading-tight text-muted-foreground">
-                    {PERIOD_TIMES[period]}
-                  </div>
                 </td>
 
                 {DAYS.map((day) => {
+                  const daySchedule = SCHEDULE[day];
+                  const isDisabled = period > daySchedule.periods;
+
+                  if (isDisabled) {
+                    return (
+                      <td
+                        key={day}
+                        className="border-b border-border bg-muted/20 p-0"
+                      >
+                        <div className="flex min-h-[56px] items-center justify-center text-muted-foreground/30">
+                          &mdash;
+                        </div>
+                      </td>
+                    );
+                  }
+
                   const slot = getSlot(day, period);
                   const subject = slot ? getSubject(slot.subjectId) : null;
+                  const timeLabel = daySchedule.times[period];
 
                   let bgStyle: React.CSSProperties = {};
                   if (subject) {
@@ -162,7 +165,7 @@ export default function StundenplanPage() {
                       <button
                         type="button"
                         onClick={() => handleCellClick(day, period)}
-                        className="flex h-full min-h-[52px] w-full flex-col items-center justify-center px-1 py-1.5 transition-colors hover:bg-muted/40"
+                        className="flex h-full min-h-[56px] w-full flex-col items-center justify-center px-1 py-1.5 transition-colors hover:bg-muted/40"
                         style={bgStyle}
                       >
                         {subject ? (
@@ -184,6 +187,11 @@ export default function StundenplanPage() {
                           </>
                         ) : (
                           <Plus className="h-4 w-4 text-muted-foreground/40" />
+                        )}
+                        {timeLabel && (
+                          <span className="mt-0.5 text-[9px] leading-tight text-muted-foreground">
+                            {timeLabel}
+                          </span>
                         )}
                       </button>
                     </td>
