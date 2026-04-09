@@ -22,6 +22,8 @@ export function useAuth() {
   return useContext(AuthCtx);
 }
 
+const isSupabaseConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://placeholder.supabase.co';
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,6 +32,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadFromSupabase = useStore((s) => s.loadFromSupabase);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) {
+      setLoading(false);
+      return;
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       const u = session?.user ?? null;
       setUser(u);
@@ -57,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) return;
     if (!loading && !user && pathname !== "/login") {
       router.push("/login");
     }
