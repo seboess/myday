@@ -3,7 +3,7 @@ export type DayOfWeek = Day | 'sa' | 'so';
 export type Semester = 'Q1' | 'Q2' | 'Q3' | 'Q4';
 export type CourseType = 'GK' | 'LK';
 export type GradeType = 'allgemein' | 'klausur';
-export type DeadlineType = 'klausur' | 'hausaufgabe' | 'referat' | 'abgabe';
+export type DeadlineType = 'klausur' | 'hausaufgabe' | 'referat' | 'abgabe' | 'test' | 'lek';
 
 export interface Subject {
   id: string;
@@ -35,6 +35,7 @@ export interface Deadline {
   type: DeadlineType;
   dueDate: string;
   notes?: string;
+  done?: boolean;
 }
 
 export interface GymCourse {
@@ -61,6 +62,20 @@ export interface Material {
 export interface MyGymDay {
   date: string; // ISO date
   courseIds: string[];
+}
+
+export interface Todo {
+  id: string;
+  text: string;
+  done: boolean;
+  date: string; // ISO date
+}
+
+export interface AbiExam {
+  id: string;
+  subjectId: string;
+  type: 'written' | 'oral';
+  points: number | null;
 }
 
 export const DAY_LABELS: Record<Day, string> = {
@@ -93,6 +108,8 @@ export const DEADLINE_TYPE_LABELS: Record<DeadlineType, string> = {
   hausaufgabe: 'Hausaufgabe',
   referat: 'Referat',
   abgabe: 'Abgabe',
+  test: 'Test',
+  lek: 'LEK',
 };
 
 export const SUBJECT_COLORS = [
@@ -117,36 +134,46 @@ export const SCHEDULE: Record<Day, { periods: number; times: Record<number, stri
   mo: {
     periods: 8,
     times: {
-      1: '09:30 - 10:15', 2: '10:20 - 11:05', 3: '11:15 - 12:00', 4: '12:05 - 12:50',
-      5: '13:05 - 13:50', 6: '13:55 - 14:40', 7: '14:45 - 15:30', 8: '15:35 - 16:20',
+      1: '09:30 - 10:15', 2: '10:15 - 11:00',
+      3: '11:15 - 12:00', 4: '12:00 - 12:45',
+      5: '13:05 - 13:50', 6: '13:50 - 14:35',
+      7: '14:50 - 15:35', 8: '15:35 - 16:20',
     },
   },
   di: {
     periods: 9,
     times: {
-      1: '08:00 - 08:45', 2: '08:50 - 09:35', 3: '09:50 - 10:35', 4: '10:40 - 11:25',
-      5: '11:45 - 12:30', 6: '12:35 - 13:20', 7: '13:40 - 14:25', 8: '14:30 - 15:15', 9: '15:20 - 16:05',
+      1: '08:00 - 08:45', 2: '08:45 - 09:30',
+      3: '09:50 - 10:35', 4: '10:35 - 11:20',
+      5: '11:45 - 12:30', 6: '12:30 - 13:15',
+      7: '13:40 - 14:25', 8: '14:25 - 15:10', 9: '15:10 - 15:55',
     },
   },
   mi: {
     periods: 8,
     times: {
-      1: '08:00 - 08:45', 2: '08:50 - 09:35', 3: '09:50 - 10:35', 4: '10:40 - 11:25',
-      5: '11:45 - 12:30', 6: '12:35 - 13:20', 7: '13:40 - 14:25', 8: '14:35 - 15:20',
+      1: '08:00 - 08:45', 2: '08:45 - 09:30',
+      3: '09:50 - 10:35', 4: '10:35 - 11:20',
+      5: '11:45 - 12:30', 6: '12:30 - 13:15',
+      7: '13:40 - 14:25', 8: '14:25 - 15:10',
     },
   },
   do: {
     periods: 9,
     times: {
-      1: '08:00 - 08:45', 2: '08:50 - 09:35', 3: '09:50 - 10:35', 4: '10:40 - 11:25',
-      5: '11:45 - 12:30', 6: '12:35 - 13:20', 7: '13:40 - 14:25', 8: '14:30 - 15:15', 9: '15:20 - 16:05',
+      1: '08:00 - 08:45', 2: '08:45 - 09:30',
+      3: '09:50 - 10:35', 4: '10:35 - 11:20',
+      5: '11:20 - 12:05', 6: '12:05 - 12:50',
+      7: '13:40 - 14:25', 8: '14:25 - 15:10', 9: '15:10 - 15:55',
     },
   },
   fr: {
     periods: 9,
     times: {
-      1: '08:00 - 08:45', 2: '08:50 - 09:35', 3: '09:50 - 10:35', 4: '10:40 - 11:25',
-      5: '11:45 - 12:30', 6: '12:35 - 13:20', 7: '13:40 - 14:25', 8: '14:30 - 15:15', 9: '15:20 - 16:05',
+      1: '08:00 - 08:45', 2: '08:45 - 09:30',
+      3: '09:50 - 10:35', 4: '10:35 - 11:20',
+      5: '11:45 - 12:30', 6: '12:30 - 13:15',
+      7: '13:40 - 14:25', 8: '14:25 - 15:10', 9: '15:10 - 15:55',
     },
   },
 };

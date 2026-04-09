@@ -20,11 +20,13 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, Plus, CheckCircle2, CalendarClock, Paperclip, ChevronDown } from "lucide-react";
+import { Trash2, Plus, CheckCircle2, CalendarClock, Paperclip, ChevronDown, Undo2 } from "lucide-react";
 import { MaterialUpload } from "@/components/material-upload";
 
 const DEADLINE_TYPES: DeadlineType[] = [
   "klausur",
+  "test",
+  "lek",
   "hausaufgabe",
   "referat",
   "abgabe",
@@ -32,6 +34,8 @@ const DEADLINE_TYPES: DeadlineType[] = [
 
 const TYPE_COLORS: Record<DeadlineType, string> = {
   klausur: "bg-red-50 text-red-700",
+  test: "bg-orange-50 text-orange-700",
+  lek: "bg-pink-50 text-pink-700",
   hausaufgabe: "bg-blue-50 text-blue-700",
   referat: "bg-purple-50 text-purple-700",
   abgabe: "bg-amber-50 text-amber-700",
@@ -67,11 +71,14 @@ export default function DeadlinesPage() {
   const deadlines = useStore((s) => s.deadlines);
   const addDeadline = useStore((s) => s.addDeadline);
   const removeDeadline = useStore((s) => s.removeDeadline);
+  const completeDeadline = useStore((s) => s.completeDeadline);
+  const uncompleteDeadline = useStore((s) => s.uncompleteDeadline);
   const materials = useStore((s) => s.materials);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [expandedMaterials, setExpandedMaterials] = useState<Set<string>>(new Set());
+  const [showCompleted, setShowCompleted] = useState(false);
 
   // Filters
   const [filterType, setFilterType] = useState<DeadlineType | "all">("all");
@@ -84,13 +91,24 @@ export default function DeadlinesPage() {
   const [formDate, setFormDate] = useState("");
   const [formNotes, setFormNotes] = useState("");
 
-  const filtered = useMemo(() => {
-    let list = [...deadlines];
+  const activeDeadlines = useMemo(() => {
+    let list = deadlines.filter((d) => !d.done);
     if (filterType !== "all") list = list.filter((d) => d.type === filterType);
     if (filterSubject !== "all")
       list = list.filter((d) => d.subjectId === filterSubject);
     list.sort(
       (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+    );
+    return list;
+  }, [deadlines, filterType, filterSubject]);
+
+  const completedDeadlines = useMemo(() => {
+    let list = deadlines.filter((d) => d.done);
+    if (filterType !== "all") list = list.filter((d) => d.type === filterType);
+    if (filterSubject !== "all")
+      list = list.filter((d) => d.subjectId === filterSubject);
+    list.sort(
+      (a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()
     );
     return list;
   }, [deadlines, filterType, filterSubject]);
@@ -200,17 +218,17 @@ export default function DeadlinesPage() {
         </Select>
       </div>
 
-      {/* Deadline list */}
-      {filtered.length === 0 ? (
+      {/* Active deadline list */}
+      {activeDeadlines.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
           <CalendarClock className="h-10 w-10 text-stone-300" />
           <p className="text-stone-400">
-            Keine Deadlines. Erstelle eine neue!
+            Keine offenen Deadlines. Erstelle eine neue!
           </p>
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((d) => {
+          {activeDeadlines.map((d) => {
             const subject = subjects.find((s) => s.id === d.subjectId);
             const days = daysUntil(d.dueDate);
             return (
@@ -291,7 +309,7 @@ export default function DeadlinesPage() {
                     <button
                       className="h-8 w-8 flex items-center justify-center rounded-full text-green-600 hover:bg-green-50 transition-colors"
                       title="Erledigt"
-                      onClick={() => removeDeadline(d.id)}
+                      onClick={() => completeDeadline(d.id)}
                     >
                       <CheckCircle2 className="h-4 w-4" />
                     </button>
@@ -307,6 +325,81 @@ export default function DeadlinesPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Completed deadlines section */}
+      {completedDeadlines.length > 0 && (
+        <div className="space-y-3">
+          <button
+            onClick={() => setShowCompleted(!showCompleted)}
+            className="flex items-center gap-2 text-sm font-medium text-stone-500 hover:text-stone-700 transition-colors"
+          >
+            <ChevronDown
+              className={`h-4 w-4 transition-transform ${showCompleted ? "rotate-180" : ""}`}
+            />
+            Erledigt ({completedDeadlines.length})
+          </button>
+
+          {showCompleted && (
+            <div className="space-y-3">
+              {completedDeadlines.map((d) => {
+                const subject = subjects.find((s) => s.id === d.subjectId);
+                return (
+                  <div key={d.id} className="bg-stone-50/60 rounded-2xl p-4 opacity-70">
+                    <div className="flex items-start gap-4">
+                      <div className="flex min-w-[70px] flex-col items-center rounded-xl bg-green-50 px-3 py-2 text-center">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <span className="text-xs font-medium text-green-700 mt-0.5">
+                          Erledigt
+                        </span>
+                      </div>
+
+                      <div className="flex-1 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${TYPE_COLORS[d.type]}`}
+                          >
+                            {DEADLINE_TYPE_LABELS[d.type]}
+                          </span>
+                          {subject && (
+                            <span className="flex items-center gap-1.5 text-sm text-stone-500">
+                              <span
+                                className="inline-block h-2.5 w-2.5 rounded-full"
+                                style={{ backgroundColor: subject.color }}
+                              />
+                              {subject.name}
+                            </span>
+                          )}
+                        </div>
+                        <p className="font-medium text-stone-600 line-through">{d.title}</p>
+                        <p className="text-xs text-stone-400">
+                          {formatDate(d.dueDate)}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col gap-1">
+                        <button
+                          className="h-8 w-8 flex items-center justify-center rounded-full text-stone-400 hover:bg-stone-100 transition-colors"
+                          title="Wiederherstellen"
+                          onClick={() => uncompleteDeadline(d.id)}
+                        >
+                          <Undo2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          className="h-8 w-8 flex items-center justify-center rounded-full text-red-400 hover:bg-red-50 transition-colors"
+                          title="Endgueltig loeschen"
+                          onClick={() => setConfirmDeleteId(d.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useStore, getSubjectSemesterAverage, calculateAbiGrade } from "@/lib/store";
-import type { Semester, GradeType, Grade } from "@/lib/types";
+import type { Semester, GradeType, AbiExam } from "@/lib/types";
 import { SEMESTER_LABELS } from "@/lib/types";
 import {
   Dialog,
@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Trash2, Plus, BookOpen } from "lucide-react";
+import { Trash2, Plus, BookOpen, GraduationCap } from "lucide-react";
 
 const SEMESTERS: Semester[] = ["Q1", "Q2", "Q3", "Q4"];
 
@@ -41,6 +41,10 @@ export default function NotenPage() {
   const grades = useStore((s) => s.grades);
   const addGrade = useStore((s) => s.addGrade);
   const removeGrade = useStore((s) => s.removeGrade);
+  const abiExams = useStore((s) => s.abiExams);
+  const addAbiExam = useStore((s) => s.addAbiExam);
+  const updateAbiExam = useStore((s) => s.updateAbiExam);
+  const removeAbiExam = useStore((s) => s.removeAbiExam);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
@@ -51,6 +55,11 @@ export default function NotenPage() {
   const [newPoints, setNewPoints] = useState("");
   const [newWeight, setNewWeight] = useState("50");
   const [newLabel, setNewLabel] = useState("");
+
+  // Abi exam form
+  const [examDialogOpen, setExamDialogOpen] = useState(false);
+  const [examSubjectId, setExamSubjectId] = useState("");
+  const [examType, setExamType] = useState<"written" | "oral">("written");
 
   const selectedSubject = subjects.find((s) => s.id === selectedSubjectId);
   const dialogGrades = grades.filter(
@@ -84,44 +93,92 @@ export default function NotenPage() {
     setNewType("allgemein");
   }
 
-  // Abi-Schnitt calculation
-  function computeBlockI(): number | null {
+  function openExamDialog() {
+    setExamSubjectId(subjects[0]?.id ?? "");
+    setExamType("written");
+    setExamDialogOpen(true);
+  }
+
+  function handleAddExam() {
+    if (!examSubjectId) return;
+    if (abiExams.length >= 5) return;
+    addAbiExam(examSubjectId, examType);
+    setExamDialogOpen(false);
+  }
+
+  // --- Block I calculation ---
+  // LKs are double weighted, user can drop 2 worst GK grades per semester
+  // 10 courses total (2 LK + 8 GK), keep 8 per semester (drop 2 worst GK)
+  const blockIResult = useMemo(() => {
     const gkSubjects = subjects.filter((s) => s.type === "GK");
     const lkSubjects = subjects.filter((s) => s.type === "LK");
 
-    const gkAverages: number[] = [];
-    for (const sub of gkSubjects) {
-      for (const sem of SEMESTERS) {
+    let totalPoints = 0;
+    let totalEntries = 0;
+
+    for (const sem of SEMESTERS) {
+      // LK grades: all must be brought in, double weighted
+      for (const sub of lkSubjects) {
         const avg = getSubjectSemesterAverage(grades, sub.id, sem);
-        if (avg !== null) gkAverages.push(Math.round(avg));
+        if (avg !== null) {
+          totalPoints += Math.round(avg) * 2;
+          totalEntries += 2;
+        }
+      }
+
+      // GK grades: drop the 2 worst per semester
+      const gkGrades: { subId: string; avg: number }[] = [];
+      for (const sub of gkSubjects) {
+        const avg = getSubjectSemesterAverage(grades, sub.id, sem);
+        if (avg !== null) {
+          gkGrades.push({ subId: sub.id, avg: Math.round(avg) });
+        }
+      }
+
+      // Sort ascending (worst first) and drop up to 2
+      gkGrades.sort((a, b) => a.avg - b.avg);
+      const dropCount = Math.min(2, Math.max(0, gkGrades.length - 6));
+      const keptGK = gkGrades.slice(dropCount);
+
+      for (const g of keptGK) {
+        totalPoints += g.avg;
+        totalEntries += 1;
       }
     }
 
-    const lkAverages: number[] = [];
-    for (const sub of lkSubjects) {
-      for (const sem of SEMESTERS) {
-        const avg = getSubjectSemesterAverage(grades, sub.id, sem);
-        if (avg !== null) lkAverages.push(Math.round(avg));
-      }
+    if (totalEntries === 0) return null;
+    return { points: totalPoints, entries: totalEntries };
+  }, [subjects, grades]);
+
+  // --- Block II calculation (Abiturpruefungen) ---
+  const blockIIResult = useMemo(() => {
+    const withPoints = abiExams.filter((e): e is AbiExam & { points: number } => e.points !== null);
+    if (withPoints.length === 0) return null;
+    const points = withPoints.reduce((sum, e) => sum + e.points * 4, 0);
+    return { points, count: withPoints.length };
+  }, [abiExams]);
+
+  // --- Total Abi grade ---
+  const abiGrade = useMemo(() => {
+    if (!blockIResult) return null;
+    // If we have exam results, use them; otherwise project from Block I only
+    const blockI = blockIResult.points;
+    const blockII = blockIIResult?.points ?? 0;
+
+    if (blockIIResult && blockIIResult.count === 5) {
+      // Full calculation with both blocks
+      const total = blockI + blockII;
+      return calculateAbiGrade(total);
     }
 
-    if (gkAverages.length === 0 && lkAverages.length === 0) return null;
-
-    const sortedGK = [...gkAverages].sort((a, b) => b - a);
-    const bestGK = sortedGK.slice(0, 24);
-
-    const sortedLK = [...lkAverages].sort((a, b) => b - a);
-    const bestLK = sortedLK.slice(0, 8);
-
-    const gkSum = bestGK.reduce((s, v) => s + v, 0);
-    const lkSum = bestLK.reduce((s, v) => s + v * 2, 0);
-
-    return gkSum + lkSum;
-  }
-
-  const blockIPoints = computeBlockI();
-  const projectedTotal = blockIPoints !== null ? Math.round(blockIPoints * (900 / 600)) : null;
-  const abiGrade = projectedTotal !== null ? calculateAbiGrade(projectedTotal) : null;
+    // Projection: scale Block I to 600 max and estimate total
+    // Max Block I: 40 entries × 15 = 600 (8 GK×4 semesters × 1 + 2 LK×4 semesters × 2)
+    const maxBlockI = blockIResult.entries * 15;
+    if (maxBlockI === 0) return null;
+    const scaledBlockI = Math.round((blockI / maxBlockI) * 600);
+    const projectedTotal = scaledBlockI + (blockIIResult?.points ?? Math.round(scaledBlockI * 0.5));
+    return calculateAbiGrade(projectedTotal);
+  }, [blockIResult, blockIIResult]);
 
   if (subjects.length === 0) {
     return (
@@ -220,17 +277,135 @@ export default function NotenPage() {
         </table>
       </div>
 
+      {/* Abiturpruefungen (Block II) */}
+      <div className="bg-stone-50 rounded-2xl p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <GraduationCap className="h-5 w-5 text-stone-500" />
+            <h2 className="text-base font-medium text-stone-800">Abiturpr&uuml;fungen</h2>
+          </div>
+          {abiExams.length < 5 && (
+            <button
+              onClick={openExamDialog}
+              className="bg-stone-900 text-white rounded-xl px-3 py-1.5 text-xs font-medium hover:bg-stone-800 transition-colors flex items-center gap-1"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Pr&uuml;fung
+            </button>
+          )}
+        </div>
+
+        {abiExams.length === 0 ? (
+          <p className="text-sm text-stone-400 text-center py-4">
+            Noch keine Abiturpr&uuml;fungen eingetragen
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {abiExams.map((exam, idx) => {
+              const subject = subjects.find((s) => s.id === exam.subjectId);
+              return (
+                <div
+                  key={exam.id}
+                  className="flex items-center gap-3 rounded-xl bg-white p-3"
+                >
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-stone-100 text-xs font-bold text-stone-600">
+                    {idx + 1}
+                  </div>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    {subject && (
+                      <>
+                        <span
+                          className="h-2.5 w-2.5 rounded-full shrink-0"
+                          style={{ backgroundColor: subject.color }}
+                        />
+                        <span className="text-sm font-medium text-stone-800 truncate">
+                          {subject.name}
+                        </span>
+                        {subject.type === "LK" && (
+                          <span className="bg-stone-200 text-stone-700 text-[9px] font-bold px-1.5 py-0.5 rounded-md shrink-0">
+                            LK
+                          </span>
+                        )}
+                      </>
+                    )}
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                      exam.type === "written"
+                        ? "bg-blue-50 text-blue-700"
+                        : "bg-purple-50 text-purple-700"
+                    }`}>
+                      {exam.type === "written" ? "Schriftlich" : "M\u00FCndlich"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <input
+                      type="number"
+                      min={0}
+                      max={15}
+                      value={exam.points ?? ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "") {
+                          updateAbiExam(exam.id, { points: null });
+                        } else {
+                          const pts = parseInt(val);
+                          if (!isNaN(pts) && pts >= 0 && pts <= 15) {
+                            updateAbiExam(exam.id, { points: pts });
+                          }
+                        }
+                      }}
+                      placeholder="-"
+                      className="w-14 rounded-lg border border-stone-200 bg-white px-2 py-1 text-center text-sm font-semibold tabular-nums text-stone-800 focus:outline-none focus:ring-2 focus:ring-stone-300"
+                    />
+                    <span className="text-xs text-stone-400">P</span>
+                    {exam.points !== null && (
+                      <span className="text-xs text-stone-500 tabular-nums w-8 text-right">
+                        ={exam.points * 4}
+                      </span>
+                    )}
+                    <button
+                      className="h-7 w-7 flex items-center justify-center rounded-full text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                      onClick={() => removeAbiExam(exam.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {blockIIResult && (
+          <div className="text-center text-xs text-stone-500">
+            Block II: {blockIIResult.points} / 300 Punkte ({blockIIResult.count}/5 Pr&uuml;fungen)
+          </div>
+        )}
+      </div>
+
       {/* Abi-Schnitt Projection */}
       <div className="bg-stone-50 rounded-2xl p-6 text-center space-y-2">
-        {blockIPoints !== null && abiGrade !== null ? (
+        {blockIResult !== null && abiGrade !== null ? (
           <>
-            <p className="text-xs font-medium text-stone-500 uppercase tracking-wider">Voraussichtlicher Abi-Schnitt</p>
+            <p className="text-xs font-medium text-stone-500 uppercase tracking-wider">
+              {blockIIResult && blockIIResult.count === 5
+                ? "Abi-Schnitt"
+                : "Voraussichtlicher Abi-Schnitt"}
+            </p>
             <p className={`text-5xl font-bold tracking-tight tabular-nums ${getAbiColor(abiGrade)}`}>
               {abiGrade.toFixed(1)}
             </p>
-            <p className="text-xs text-stone-400 mt-2">
-              Block I: ~{blockIPoints} Punkte (basierend auf aktuellen Noten)
-            </p>
+            <div className="flex flex-col gap-1 mt-2">
+              <p className="text-xs text-stone-400">
+                Block I: {blockIResult.points} Punkte
+                <span className="text-stone-300"> &middot; </span>
+                LK doppelt, 2 schlechteste GK/Halbjahr gestrichen
+              </p>
+              {blockIIResult && (
+                <p className="text-xs text-stone-400">
+                  Block II: {blockIIResult.points} Punkte
+                </p>
+              )}
+            </div>
           </>
         ) : (
           <>
@@ -378,6 +553,73 @@ export default function NotenPage() {
               className="w-full bg-stone-900 text-white rounded-xl px-5 py-2.5 font-medium hover:bg-stone-800 transition-colors flex items-center justify-center gap-1.5"
             >
               <Plus className="h-4 w-4" />
+              Hinzuf&uuml;gen
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Exam Dialog */}
+      <Dialog open={examDialogOpen} onOpenChange={setExamDialogOpen}>
+        <DialogContent className="max-w-xs rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-stone-900">Abiturpr&uuml;fung hinzuf&uuml;gen</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label className="text-xs text-stone-500">Fach</Label>
+              <Select value={examSubjectId} onValueChange={(v) => v && setExamSubjectId(v)}>
+                <SelectTrigger className="rounded-xl border-stone-200">
+                  <SelectValue placeholder="Fach waehlen" />
+                </SelectTrigger>
+                <SelectContent>
+                  {subjects.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="inline-block h-2.5 w-2.5 rounded-full"
+                          style={{ backgroundColor: s.color }}
+                        />
+                        {s.name}
+                        {s.type === "LK" && " (LK)"}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs text-stone-500">Pr&uuml;fungsart</Label>
+              <div className="flex gap-2">
+                <button
+                  className={`flex-1 rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+                    examType === "written"
+                      ? "bg-stone-900 text-white"
+                      : "bg-stone-100 text-stone-700 hover:bg-stone-200"
+                  }`}
+                  onClick={() => setExamType("written")}
+                >
+                  Schriftlich
+                </button>
+                <button
+                  className={`flex-1 rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+                    examType === "oral"
+                      ? "bg-stone-900 text-white"
+                      : "bg-stone-100 text-stone-700 hover:bg-stone-200"
+                  }`}
+                  onClick={() => setExamType("oral")}
+                >
+                  M&uuml;ndlich
+                </button>
+              </div>
+            </div>
+
+            <button
+              onClick={handleAddExam}
+              disabled={!examSubjectId || abiExams.length >= 5}
+              className="w-full bg-stone-900 text-white rounded-xl px-5 py-2.5 font-medium hover:bg-stone-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
               Hinzuf&uuml;gen
             </button>
           </div>
