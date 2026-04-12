@@ -34,6 +34,15 @@ describe('calculateAbiGrade', () => {
     const grade700 = calculateAbiGrade(700)!
     expect(grade700).toBeLessThan(grade600)
   })
+
+  it('returns null for NaN input', () => {
+    expect(calculateAbiGrade(NaN)).toBeNull()
+  })
+
+  it('returns null for Infinity input', () => {
+    expect(calculateAbiGrade(Infinity)).toBeNull()
+    expect(calculateAbiGrade(-Infinity)).toBeNull()
+  })
 })
 
 describe('getSubjectSemesterAverage', () => {
@@ -76,6 +85,11 @@ describe('getSubjectSemesterAverage', () => {
 
   it('returns null when total weight is zero', () => {
     const grades = [makeGrade(10, 0)]
+    expect(getSubjectSemesterAverage(grades, 'math', 'Q1')).toBeNull()
+  })
+
+  it('returns null when weight is NaN', () => {
+    const grades = [makeGrade(10, NaN)]
     expect(getSubjectSemesterAverage(grades, 'math', 'Q1')).toBeNull()
   })
 })
