@@ -115,6 +115,17 @@ Source: https://x.com/bcherny/status/2017742741636321619
 – Ask for ASCII diagrams of protocols and codebases
 – Build a spaced-repetition learning skill: explain your understanding, Claude asks follow-ups, stores gaps
 
+## Testing
+
+- Run: `npm test` or `npx vitest run`
+- Test dir: `test/`
+- Framework: Vitest + @testing-library/react
+- See TESTING.md for full conventions
+- 100% coverage is the goal
+- When writing new functions, write a corresponding test
+- When fixing a bug, write a regression test
+- Never commit code that makes existing tests fail
+
 ## Skill routing
 
 When the user's request matches an available skill, ALWAYS invoke it using the Skill
