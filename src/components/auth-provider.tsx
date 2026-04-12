@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
 import type { User } from "@supabase/supabase-js";
 import { usePathname, useRouter } from "next/navigation";
@@ -24,12 +24,14 @@ export function useAuth() {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isSupabaseConfigured);
   const router = useRouter();
   const pathname = usePathname();
   const loadFromSupabase = useStore((s) => s.loadFromSupabase);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) return;
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       const u = session?.user ?? null;
       setUser(u);
@@ -38,6 +40,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setLoading(false);
       }
+    }).catch(() => {
+      setLoading(false);
     });
 
     const {
@@ -57,13 +61,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (!isSupabaseConfigured) return;
     if (!loading && !user && pathname !== "/login") {
       router.push("/login");
     }
   }, [loading, user, pathname, router]);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    if (isSupabaseConfigured) {
+      await supabase.auth.signOut();
+    }
     router.push("/login");
   };
 

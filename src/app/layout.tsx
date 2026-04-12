@@ -1,14 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import Nav from "@/components/nav";
 import { ServiceWorkerRegister } from "@/components/sw-register";
 import { AuthProvider } from "@/components/auth-provider";
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "MyDay",
@@ -35,8 +29,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="de" className={`${inter.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-white font-[var(--font-inter)]">
+    <html lang="de" className="h-full antialiased">
+      <body className="min-h-full flex flex-col bg-white font-sans">
         <AuthProvider>
           <Nav />
           <ServiceWorkerRegister />
