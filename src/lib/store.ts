@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { v4 as uuid } from 'uuid';
 import type { Subject, TimetableSlot, Grade, Deadline, GymCourse, Material, MyGymDay, Todo, AbiExam, Day, Semester, GradeType, DeadlineType } from './types';
-import { supabase } from './supabase';
+import { supabase, isSupabaseConfigured } from './supabase';
 import { loadUserData } from './supabase-sync';
 
 interface AppState {
@@ -89,14 +89,14 @@ export const useStore = create<AppState>()((set, get) => ({
     const id = uuid();
     set((s) => ({ subjects: [...s.subjects, { id, name, color, type }] }));
     const { userId } = get();
-    if (userId) {
+    if (userId && isSupabaseConfigured) {
       supabase.from('subjects').insert({ id, user_id: userId, name, color, type }).then();
     }
   },
   updateSubject: (id, updates) => {
     set((s) => ({ subjects: s.subjects.map((sub) => (sub.id === id ? { ...sub, ...updates } : sub)) }));
     const { userId } = get();
-    if (userId) {
+    if (userId && isSupabaseConfigured) {
       const dbUpdates: Record<string, unknown> = {};
       if (updates.name !== undefined) dbUpdates.name = updates.name;
       if (updates.color !== undefined) dbUpdates.color = updates.color;
@@ -107,7 +107,7 @@ export const useStore = create<AppState>()((set, get) => ({
   removeSubject: (id) => {
     set((s) => ({ subjects: s.subjects.filter((sub) => sub.id !== id) }));
     const { userId } = get();
-    if (userId) {
+    if (userId && isSupabaseConfigured) {
       supabase.from('subjects').delete().eq('id', id).eq('user_id', userId).then();
     }
   },
@@ -120,7 +120,7 @@ export const useStore = create<AppState>()((set, get) => ({
       return { timetable: [...filtered, { day, period, subjectId }] };
     });
     const { userId } = get();
-    if (userId) {
+    if (userId && isSupabaseConfigured) {
       // Upsert: delete then insert (Supabase upsert needs all unique cols)
       supabase
         .from('timetable_slots')
@@ -139,7 +139,7 @@ export const useStore = create<AppState>()((set, get) => ({
   clearTimetableSlot: (day, period) => {
     set((s) => ({ timetable: s.timetable.filter((t) => !(t.day === day && t.period === period)) }));
     const { userId } = get();
-    if (userId) {
+    if (userId && isSupabaseConfigured) {
       supabase.from('timetable_slots').delete().eq('user_id', userId).eq('day', day).eq('period', period).then();
     }
   },
@@ -150,7 +150,7 @@ export const useStore = create<AppState>()((set, get) => ({
     const id = uuid();
     set((s) => ({ grades: [...s.grades, { id, subjectId, semester, type, points, weight, label }] }));
     const { userId } = get();
-    if (userId) {
+    if (userId && isSupabaseConfigured) {
       supabase
         .from('grades')
         .insert({ id, user_id: userId, subject_id: subjectId, semester, type, points, weight, label: label ?? null })
@@ -160,7 +160,7 @@ export const useStore = create<AppState>()((set, get) => ({
   updateGrade: (id, updates) => {
     set((s) => ({ grades: s.grades.map((g) => (g.id === id ? { ...g, ...updates } : g)) }));
     const { userId } = get();
-    if (userId) {
+    if (userId && isSupabaseConfigured) {
       const dbUpdates: Record<string, unknown> = {};
       if (updates.subjectId !== undefined) dbUpdates.subject_id = updates.subjectId;
       if (updates.semester !== undefined) dbUpdates.semester = updates.semester;
@@ -174,7 +174,7 @@ export const useStore = create<AppState>()((set, get) => ({
   removeGrade: (id) => {
     set((s) => ({ grades: s.grades.filter((g) => g.id !== id) }));
     const { userId } = get();
-    if (userId) {
+    if (userId && isSupabaseConfigured) {
       supabase.from('grades').delete().eq('id', id).eq('user_id', userId).then();
     }
   },
@@ -185,7 +185,7 @@ export const useStore = create<AppState>()((set, get) => ({
     const id = uuid();
     set((s) => ({ deadlines: [...s.deadlines, { id, subjectId, title, type, dueDate, notes }] }));
     const { userId } = get();
-    if (userId) {
+    if (userId && isSupabaseConfigured) {
       supabase
         .from('deadlines')
         .insert({ id, user_id: userId, subject_id: subjectId, title, type, due_date: dueDate, notes: notes ?? null })
@@ -195,7 +195,7 @@ export const useStore = create<AppState>()((set, get) => ({
   updateDeadline: (id, updates) => {
     set((s) => ({ deadlines: s.deadlines.map((d) => (d.id === id ? { ...d, ...updates } : d)) }));
     const { userId } = get();
-    if (userId) {
+    if (userId && isSupabaseConfigured) {
       const dbUpdates: Record<string, unknown> = {};
       if (updates.subjectId !== undefined) dbUpdates.subject_id = updates.subjectId;
       if (updates.title !== undefined) dbUpdates.title = updates.title;
@@ -208,21 +208,21 @@ export const useStore = create<AppState>()((set, get) => ({
   removeDeadline: (id: string) => {
     set((s) => ({ deadlines: s.deadlines.filter((d: Deadline) => d.id !== id) }));
     const { userId } = get();
-    if (userId) {
+    if (userId && isSupabaseConfigured) {
       supabase.from('deadlines').delete().eq('id', id).eq('user_id', userId).then();
     }
   },
   completeDeadline: (id: string) => {
     set((s) => ({ deadlines: s.deadlines.map((d: Deadline) => (d.id === id ? { ...d, done: true } : d)) }));
     const { userId } = get();
-    if (userId) {
+    if (userId && isSupabaseConfigured) {
       supabase.from('deadlines').update({ done: true }).eq('id', id).eq('user_id', userId).then();
     }
   },
   uncompleteDeadline: (id: string) => {
     set((s) => ({ deadlines: s.deadlines.map((d: Deadline) => (d.id === id ? { ...d, done: false } : d)) }));
     const { userId } = get();
-    if (userId) {
+    if (userId && isSupabaseConfigured) {
       supabase.from('deadlines').update({ done: false }).eq('id', id).eq('user_id', userId).then();
     }
   },
@@ -251,7 +251,7 @@ export const useStore = create<AppState>()((set, get) => ({
     });
 
     const { userId } = get();
-    if (userId) {
+    if (userId && isSupabaseConfigured) {
       if (isRemoving) {
         supabase.from('my_gym_days').delete().eq('user_id', userId).eq('date', date).eq('course_id', courseId).then();
       } else {
@@ -267,7 +267,7 @@ export const useStore = create<AppState>()((set, get) => ({
     const createdAt = new Date().toISOString();
     set((s) => ({ materials: [...s.materials, { ...material, id, createdAt }] }));
     const { userId } = get();
-    if (userId) {
+    if (userId && isSupabaseConfigured) {
       supabase
         .from('materials')
         .insert({
@@ -287,7 +287,7 @@ export const useStore = create<AppState>()((set, get) => ({
   removeMaterial: (id: string) => {
     set((s) => ({ materials: s.materials.filter((m: Material) => m.id !== id) }));
     const { userId } = get();
-    if (userId) {
+    if (userId && isSupabaseConfigured) {
       supabase.from('materials').delete().eq('id', id).eq('user_id', userId).then();
     }
   },
@@ -298,7 +298,7 @@ export const useStore = create<AppState>()((set, get) => ({
     const id = uuid();
     set((s) => ({ todos: [...s.todos, { id, text, done: false, date }] }));
     const { userId } = get();
-    if (userId) {
+    if (userId && isSupabaseConfigured) {
       supabase.from('todos').insert({ id, user_id: userId, text, done: false, date }).then();
     }
   },
@@ -308,14 +308,14 @@ export const useStore = create<AppState>()((set, get) => ({
     const newDone = !todo.done;
     set((s) => ({ todos: s.todos.map((t: Todo) => (t.id === id ? { ...t, done: newDone } : t)) }));
     const { userId } = get();
-    if (userId) {
+    if (userId && isSupabaseConfigured) {
       supabase.from('todos').update({ done: newDone }).eq('id', id).eq('user_id', userId).then();
     }
   },
   removeTodo: (id: string) => {
     set((s) => ({ todos: s.todos.filter((t: Todo) => t.id !== id) }));
     const { userId } = get();
-    if (userId) {
+    if (userId && isSupabaseConfigured) {
       supabase.from('todos').delete().eq('id', id).eq('user_id', userId).then();
     }
   },
@@ -326,14 +326,14 @@ export const useStore = create<AppState>()((set, get) => ({
     const id = uuid();
     set((s) => ({ abiExams: [...s.abiExams, { id, subjectId, type, points: null }] }));
     const { userId } = get();
-    if (userId) {
+    if (userId && isSupabaseConfigured) {
       supabase.from('abi_exams').insert({ id, user_id: userId, subject_id: subjectId, type, points: null }).then();
     }
   },
   updateAbiExam: (id: string, updates: Partial<Omit<AbiExam, 'id'>>) => {
     set((s) => ({ abiExams: s.abiExams.map((e: AbiExam) => (e.id === id ? { ...e, ...updates } : e)) }));
     const { userId } = get();
-    if (userId) {
+    if (userId && isSupabaseConfigured) {
       const dbUpdates: Record<string, unknown> = {};
       if (updates.subjectId !== undefined) dbUpdates.subject_id = updates.subjectId;
       if (updates.type !== undefined) dbUpdates.type = updates.type;
@@ -344,7 +344,7 @@ export const useStore = create<AppState>()((set, get) => ({
   removeAbiExam: (id: string) => {
     set((s) => ({ abiExams: s.abiExams.filter((e: AbiExam) => e.id !== id) }));
     const { userId } = get();
-    if (userId) {
+    if (userId && isSupabaseConfigured) {
       supabase.from('abi_exams').delete().eq('id', id).eq('user_id', userId).then();
     }
   },
