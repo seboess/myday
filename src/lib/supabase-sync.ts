@@ -20,8 +20,8 @@ export async function loadUserData(userId: string): Promise<UserData> {
     supabase.from('deadlines').select('*').eq('user_id', userId),
     supabase.from('materials').select('*').eq('user_id', userId),
     supabase.from('my_gym_days').select('*').eq('user_id', userId),
-    supabase.from('todos').select('*').eq('user_id', userId).catch(() => ({ data: null })),
-    supabase.from('abi_exams').select('*').eq('user_id', userId).catch(() => ({ data: null })),
+    supabase.from('todos').select('*').eq('user_id', userId).then(r => r, () => ({ data: null, error: null })),
+    supabase.from('abi_exams').select('*').eq('user_id', userId).then(r => r, () => ({ data: null, error: null })),
   ]);
 
   return {
