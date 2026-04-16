@@ -455,19 +455,5 @@ function defaultGymCourses(): GymCourse[] {
   ];
 }
 
-// Abi calculation helper
-export function calculateAbiGrade(totalPoints: number): number | null {
-  if (totalPoints < 300) return null; // nicht bestanden
-  if (totalPoints > 900) return 1.0;
-  const grade = 17 / 3 - totalPoints / 180;
-  return Math.max(1.0, Math.min(4.0, Math.round(grade * 10) / 10));
-}
-
-export function getSubjectSemesterAverage(grades: Grade[], subjectId: string, semester: Semester): number | null {
-  const semGrades = grades.filter((g) => g.subjectId === subjectId && g.semester === semester);
-  if (semGrades.length === 0) return null;
-  const totalWeight = semGrades.reduce((sum, g) => sum + g.weight, 0);
-  if (totalWeight === 0) return null;
-  const weightedSum = semGrades.reduce((sum, g) => sum + g.points * g.weight, 0);
-  return Math.round((weightedSum / totalWeight) * 10) / 10;
-}
+// Re-export grade calculation helpers
+export { calculateAbiGrade, getSubjectSemesterAverage } from './grade-utils';
