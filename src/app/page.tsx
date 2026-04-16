@@ -107,7 +107,9 @@ export default function Home() {
   }, [subjects]);
 
   const todayTodos = useMemo(() => {
-    return todos.filter((t) => t.date === dateString);
+    const todayItems = todos.filter((t) => t.date === dateString);
+    const carriedOver = todos.filter((t) => t.date < dateString && !t.done);
+    return [...carriedOver, ...todayItems];
   }, [todos, dateString]);
 
   function handleAddTodo() {
@@ -240,6 +242,11 @@ export default function Home() {
                 }`}
               >
                 {todo.text}
+                {todo.date < dateString && !todo.done && (
+                  <span className="ml-1.5 text-[10px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md">
+                    von {new Date(todo.date + 'T00:00:00').toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })}
+                  </span>
+                )}
               </span>
               <button
                 onClick={() => removeTodo(todo.id)}
