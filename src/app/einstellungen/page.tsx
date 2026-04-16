@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useStore } from "@/lib/store";
-import { SUBJECT_COLORS } from "@/lib/types";
-import type { Subject } from "@/lib/types";
+import { SUBJECT_COLORS, DAY_OF_WEEK_LABELS } from "@/lib/types";
+import type { Subject, DayOfWeek } from "@/lib/types";
 import {
   Dialog,
   DialogContent,
@@ -13,20 +13,35 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Trash2,
   Plus,
   Pencil,
   AlertTriangle,
   BookOpen,
   LogOut,
+  Dumbbell,
+  RotateCcw,
 } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
+
+const DAYS_ORDER: DayOfWeek[] = ["mo", "di", "mi", "do", "fr", "sa", "so"];
 
 export default function EinstellungenPage() {
   const subjects = useStore((s) => s.subjects);
   const addSubject = useStore((s) => s.addSubject);
   const updateSubject = useStore((s) => s.updateSubject);
   const removeSubject = useStore((s) => s.removeSubject);
+  const gymCourses = useStore((s) => s.gymCourses);
+  const addGymCourse = useStore((s) => s.addGymCourse);
+  const removeGymCourse = useStore((s) => s.removeGymCourse);
+  const resetGymCourses = useStore((s) => s.resetGymCourses);
   const { user, signOut } = useAuth();
 
   // Subject dialog
@@ -38,6 +53,15 @@ export default function EinstellungenPage() {
 
   // Delete subject confirm
   const [deleteSubjectId, setDeleteSubjectId] = useState<string | null>(null);
+
+  // Gym course dialog
+  const [gymDialogOpen, setGymDialogOpen] = useState(false);
+  const [gymName, setGymName] = useState("");
+  const [gymTime, setGymTime] = useState("");
+  const [gymDay, setGymDay] = useState<DayOfWeek>("mo");
+  const [gymTrainer, setGymTrainer] = useState("");
+  const [gymRoom, setGymRoom] = useState("");
+  const [gymFilterDay, setGymFilterDay] = useState<DayOfWeek | "all">("all");
 
   // --- Subject CRUD ---
 
@@ -134,6 +158,88 @@ export default function EinstellungenPage() {
             ))}
           </div>
         )}
+      </section>
+
+      <div className="border-t border-stone-100" />
+
+      {/* --- Section: Gym-Kurse --- */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-medium text-stone-500 uppercase tracking-wider">Gym-Kurse verwalten</h2>
+          <div className="flex gap-2">
+            <button
+              onClick={resetGymCourses}
+              className="bg-stone-100 text-stone-600 rounded-xl px-3 py-2 text-xs font-medium hover:bg-stone-200 transition-colors flex items-center gap-1"
+              title="Standardkurse wiederherstellen"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => {
+                setGymName("");
+                setGymTime("");
+                setGymDay("mo");
+                setGymTrainer("");
+                setGymRoom("");
+                setGymDialogOpen(true);
+              }}
+              className="bg-stone-900 text-white rounded-xl px-4 py-2 text-sm font-medium hover:bg-stone-800 transition-colors flex items-center gap-1.5"
+            >
+              <Plus className="h-4 w-4" />
+              Kurs
+            </button>
+          </div>
+        </div>
+
+        <div className="flex gap-1.5 overflow-x-auto py-1">
+          <button
+            onClick={() => setGymFilterDay("all")}
+            className={`flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+              gymFilterDay === "all" ? "bg-stone-900 text-white" : "text-stone-500 hover:bg-stone-100"
+            }`}
+          >
+            Alle
+          </button>
+          {DAYS_ORDER.map((d) => (
+            <button
+              key={d}
+              onClick={() => setGymFilterDay(d)}
+              className={`flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                gymFilterDay === d ? "bg-stone-900 text-white" : "text-stone-500 hover:bg-stone-100"
+              }`}
+            >
+              {DAY_OF_WEEK_LABELS[d].slice(0, 2)}
+            </button>
+          ))}
+        </div>
+
+        <p className="text-xs text-stone-400">{gymCourses.length} Kurse gesamt</p>
+
+        <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
+          {gymCourses
+            .filter((c) => gymFilterDay === "all" || c.day === gymFilterDay)
+            .sort((a, b) => {
+              const dayOrder = DAYS_ORDER.indexOf(a.day as DayOfWeek) - DAYS_ORDER.indexOf(b.day as DayOfWeek);
+              if (dayOrder !== 0) return dayOrder;
+              return a.time.localeCompare(b.time);
+            })
+            .map((c) => (
+              <div key={c.id} className="bg-stone-50 rounded-xl p-2.5 flex items-center gap-2">
+                <span className="text-[10px] font-bold text-stone-500 bg-stone-100 px-1.5 py-0.5 rounded-md w-7 text-center shrink-0">
+                  {DAY_OF_WEEK_LABELS[c.day].slice(0, 2)}
+                </span>
+                <span className="text-xs text-stone-400 w-[90px] shrink-0">{c.time}</span>
+                <span className="text-sm font-medium text-stone-800 flex-1 truncate">{c.name}</span>
+                {c.trainer && <span className="text-xs text-stone-400 truncate hidden sm:inline">{c.trainer}</span>}
+                <button
+                  className="h-7 w-7 flex items-center justify-center rounded-full text-stone-400 hover:bg-red-50 hover:text-red-600 transition-colors shrink-0"
+                  onClick={() => removeGymCourse(c.id)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+        </div>
       </section>
 
       <div className="border-t border-stone-100" />
@@ -272,6 +378,64 @@ export default function EinstellungenPage() {
         </DialogContent>
       </Dialog>
 
+      {/* New Gym Course Dialog */}
+      <Dialog open={gymDialogOpen} onOpenChange={setGymDialogOpen}>
+        <DialogContent className="rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-stone-900">Neuer Gym-Kurs</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label className="text-xs text-stone-500">Kursname</Label>
+              <Input value={gymName} onChange={(e) => setGymName(e.target.value)} placeholder="z.B. PILATES" className="rounded-xl border-stone-200" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs text-stone-500">Tag</Label>
+                <Select value={gymDay} onValueChange={(v) => v && setGymDay(v as DayOfWeek)}>
+                  <SelectTrigger className="rounded-xl border-stone-200"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {DAYS_ORDER.map((d) => (
+                      <SelectItem key={d} value={d}>{DAY_OF_WEEK_LABELS[d]}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-stone-500">Uhrzeit</Label>
+                <Input value={gymTime} onChange={(e) => setGymTime(e.target.value)} placeholder="10:00-10:50" className="rounded-xl border-stone-200" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs text-stone-500">Trainer (optional)</Label>
+                <Input value={gymTrainer} onChange={(e) => setGymTrainer(e.target.value)} placeholder="Name" className="rounded-xl border-stone-200" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-stone-500">Raum (optional)</Label>
+                <Input value={gymRoom} onChange={(e) => setGymRoom(e.target.value)} placeholder="Kursraum" className="rounded-xl border-stone-200" />
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                if (!gymName.trim() || !gymTime.trim()) return;
+                addGymCourse({
+                  name: gymName.trim(),
+                  time: gymTime.trim(),
+                  day: gymDay,
+                  trainer: gymTrainer.trim() || undefined,
+                  room: gymRoom.trim() || undefined,
+                });
+                setGymDialogOpen(false);
+              }}
+              disabled={!gymName.trim() || !gymTime.trim()}
+              className="w-full bg-stone-900 text-white rounded-xl px-5 py-2.5 font-medium hover:bg-stone-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Kurs hinzufuegen
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

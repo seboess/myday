@@ -39,6 +39,9 @@ interface AppState {
   gymCourses: GymCourse[];
   myGymDays: MyGymDay[];
   toggleGymCourse: (date: string, courseId: string) => void;
+  addGymCourse: (course: Omit<GymCourse, 'id'>) => void;
+  removeGymCourse: (id: string) => void;
+  resetGymCourses: () => void;
 
   // Materials (metadata only, blobs in Supabase Storage)
   materials: Material[];
@@ -258,6 +261,17 @@ export const useStore = create<AppState>()((set, get) => ({
         supabase.from('my_gym_days').insert({ user_id: userId, date, course_id: courseId }).then();
       }
     }
+  },
+
+  addGymCourse: (course: Omit<GymCourse, 'id'>) => {
+    const id = uuid();
+    set((s) => ({ gymCourses: [...s.gymCourses, { ...course, id }] }));
+  },
+  removeGymCourse: (id: string) => {
+    set((s) => ({ gymCourses: s.gymCourses.filter((c: GymCourse) => c.id !== id) }));
+  },
+  resetGymCourses: () => {
+    set({ gymCourses: defaultGymCourses() });
   },
 
   // Materials
